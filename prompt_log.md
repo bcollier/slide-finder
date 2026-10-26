@@ -144,6 +144,24 @@ Prompts during this stretch:
   the describer.
 - **A persistent 1Password-style mistake of mine, not the AI's:** the generated passcode was 14
   characters and I kept typing 10. I set my own.
+- **Duplicate grouping, second version.** The whole-page hash split one slide into one copy per
+  term, because every term has a new template. Relaxing to "identical text is the same slide"
+  was measured and rejected (22 different "What's Wrong with this Picture?" pages merged); the
+  fix hashes the embedded pictures, which survive a template change. Along the way, pictures
+  compared loosely ("any picture matches") chained the steps of build-up sequences and merged a
+  stock picture under different titles; each got a rule.
+- **Titles, twice.** A text-only pass paraphrased headings ("Business Advantages of Customer
+  Segmentation" for a slide that says "Benefits of Customer Segmentation"). The vision pass
+  returned the real headings but, for 32 slides, a sentence of prose ("I don't see a heading
+  printed on this lecture slide...") that went straight into the title. The cleanup sweep then
+  shortened 38 legitimate long titles (slides that quote a sentence as their heading), which
+  had to be restored from the slide text.
+- **The 40-candidate cap.** "Show 100" returned 24 slides: pgvector's HNSW index returns at most
+  `hnsw.ef_search` (40) rows per query whatever the limit. Supabase refused to let the function
+  raise the setting, so the vector side became an exact scan.
+- **Equal weight for keywords.** A slide whose image description contained every word of
+  "how does a computer read a photo" tied the right slide on score (keyword #1 = meaning #1)
+  and won the tie. Keyword ranks now count half.
 
 ## 6. Testing the prototype (2:00 PM onward)
 
@@ -299,6 +317,38 @@ own narration.
 
 All four evidence views are on every card: the sentence and score split, the gauge, and the
 ledger and heat text under a collapsible "Evidence". The gauge is explained in README section 3.
+
+## 6d. Evening fixes (6:00 PM to 7:00 PM)
+
+> remove the password all together until I say to add it back on
+
+`SF_OPEN=1` set in the Vercel project turns the gate off; the passcode itself is kept so
+turning it back on is removing one setting.
+
+> put all these details on the card when it opens, not on the page that shows all cards
+
+The four evidence views moved into the slide view under "Why this slide was chosen"; result
+cards keep one line, the best-matching sentence.
+
+> why do some course names have a circle aroudn them and others don't in the header
+
+The version tabs: the filled one is the version shown, the outlined ones can be clicked. The row
+now starts with "Showing" and the selected version has a tick.
+
+> explain meaning 1 meaning 5 etc and why two narrations
+
+Ranks among all 7,900 items by meaning; narration is stored in ~120-word chunks, each its own
+item. The ledger rows now name the narration part and term, and spell the rank out ("1st closest
+item in the index by meaning").
+
+> document everything really well, including the prompt log, lots of diagrams showing how data
+> is loaded, stored, how matches are made, etc. clean up the code using clean code principles
+
+`docs/ARCHITECTURE.md`: twelve sections with a Mermaid diagram each (overview, both loading
+phases, grouping rules, describing and titling, text alignment, storage, answering a question,
+the slide view, runtime additions, evaluation, security). This log gained this section and the
+evening's mistakes above. Code cleanup ran in parallel: `search.py` split into named functions,
+the dead "two kinds" bonus removed, docstrings on every module.
 
 ## 7. Evaluation
 

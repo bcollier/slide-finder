@@ -3,7 +3,9 @@
 Find my own slides by meaning. Ask "how do I predict demand in the future" and get the slides
 where I taught it, ranked, with what I said in class while each one was on screen.
 
-Live (passcode): https://slide-finder.vercel.app
+Live: https://slide-finder.vercel.app (the passcode gate is switched off for now)
+
+How it all works, with diagrams: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## 1. What it does and why I built it
 
@@ -291,13 +293,19 @@ What the numbers say:
 
 To run it yourself:
 
-1. Create a free Supabase project. In the SQL editor, run the three files in
+1. Create a free Supabase project. In the SQL editor, run the four files in
    `supabase/migrations/` in order (`001_schema.sql`, `002_desc_items.sql`,
-   `003_exact_vector_scan.sql`). In Storage, create a private bucket named `slide-finder`.
+   `003_exact_vector_scan.sql`, `004_pic_hash.sql`). In Storage, create a private bucket named
+   `slide-finder`.
 2. Copy `.env.example` to `.env` and fill in `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
    `VOYAGE_API_KEY`, and an `SF_PASSCODE`.
 3. `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
 4. `.venv/bin/uvicorn slidefinder.app:app --port 8000` and open http://localhost:8000.
+5. To load decks of your own in bulk, run the loaders in this order per course:
+   `python -m slidefinder.archive COURSE`, `python -m slidefinder.load_archive COURSE`,
+   `python -m slidefinder.describe --course COURSE --yes`, `python -m slidefinder.align_text COURSE`
+   (if you have timed transcripts), `python -m slidefinder.title --vision --yes`, and
+   `python -m slidefinder.family`. The folder layout they expect is in `docs/ARCHITECTURE.md`.
 5. Add data: click **Add deck** and choose any PDF. The browser renders the pages and the
    server indexes them; they are searchable as soon as it finishes. My own archive is not in the
    repo (see `.gitignore`); `slidefinder/load.py` and `slidefinder/archive.py` are the loaders I

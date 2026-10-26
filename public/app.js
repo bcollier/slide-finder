@@ -83,7 +83,7 @@ async function openSlide(id) {
     const t = win ? `${hms(win[0])}–${hms(win[win.length - 1] ?? win[1])}` : '';
     const mins = (o.windows || []).reduce((a, w) => a + (w[1] - w[0]), 0);
     return `<div class="occ collapsed"><div class="occ-head"><span><b>${esc(o.term)}</b> · session ${o.session}</span>
-      <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method}` : ''}</span></div>
+      <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method + ' (lower confidence)'}` : ''}</span></div>
       <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
   }).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
   $('#items').innerHTML = (d.items || []).map(it => `<div class="item"><div class="item-head">${{ said: 'what I said', desc: 'image description' }[it.kind] || it.kind} · ${esc(it.id)} · ${it.text.split(/\s+/).length} words</div><pre>${esc(it.text)}</pre></div>`).join('') || '<p class="hint">Nothing indexed.</p>';

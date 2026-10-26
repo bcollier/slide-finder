@@ -94,7 +94,7 @@ def main() -> None:
               "order": "slide_id"}
     if args.course:
         params["course"] = f"eq.{args.course}"
-    slides = db.select(params and "sf_slides", params)
+    slides = db.select_all("sf_slides", params)
     cache = load_cache()
     todo = [s for s in slides if not s["description"] and s["slide_id"] not in cache]
     if args.limit:

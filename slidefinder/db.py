@@ -42,6 +42,18 @@ def select(table: str, params: dict[str, Any] | None = None) -> list[dict]:
     return _check(_client.get(f"/rest/v1/{table}", params=params or {})).json()
 
 
+def select_all(table: str, params: dict[str, Any] | None = None, page: int = 1000) -> list[dict]:
+    """Every matching row. PostgREST caps one response at 1000 rows, so page with Range headers."""
+    out: list[dict] = []
+    while True:
+        r = _check(_client.get(f"/rest/v1/{table}", params=params or {},
+                               headers={"Range-Unit": "items", "Range": f"{len(out)}-{len(out) + page - 1}"}))
+        rows = r.json()
+        out.extend(rows)
+        if len(rows) < page:
+            return out
+
+
 def delete(table: str, params: dict[str, Any]) -> None:
     _check(_client.delete(f"/rest/v1/{table}", params=params))
 

@@ -103,7 +103,18 @@ async function openSlide(id) {
       <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method + ' (lower confidence)'}` : ''}</span></div>
       <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
   }).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
-  $('#items').innerHTML = (d.items || []).map(it => `<div class="item"><div class="item-head">${{ said: 'what I said', desc: 'image description' }[it.kind] || it.kind} · ${esc(it.id)} · ${it.text.split(/\s+/).length} words</div><pre>${esc(it.text)}</pre></div>`).join('') || '<p class="hint">Nothing indexed.</p>';
+  // "said" chunks: what I said in one term is cut into ~120-word pieces, each its own item.
+  const parts = {};
+  for (const it of d.items || []) if (it.kind === 'said') parts[it.occurrence_id || it.term] = (parts[it.occurrence_id || it.term] || 0) + 1;
+  const seen = {};
+  $('#items').innerHTML = (d.items || []).map(it => {
+    let head = { said: 'what I said', desc: 'image description' }[it.kind] || it.kind;
+    if (it.kind === 'said') {
+      const key = it.occurrence_id || it.term, n = parts[key]; seen[key] = (seen[key] || 0) + 1;
+      head += ` · ${esc(it.term || '')}` + (n > 1 ? ` · part ${seen[key]} of ${n}` : '');
+    }
+    return `<div class="item"><div class="item-head">${head} · ${esc(it.id)} · ${it.text.split(/\s+/).length} words</div><pre>${esc(it.text)}</pre></div>`;
+  }).join('') || '<p class="hint">Nothing indexed.</p>';
   $('#notes').innerHTML = d.notes.map(n => `<li>${esc(n.text.replace(/^\[[^\]]*\]\s*/, ''))}</li>`).join('') || '<li class="hint">None yet.</li>';
   $('#slide').showModal();
 }

@@ -129,7 +129,7 @@ def slide_detail(slide_id: str) -> dict | None:
         return None
     r = rows[0]
     occ = db.select("sf_occurrences", {"slide_id": f"eq.{slide_id}", "order": "term.desc"})
-    items = db.select("sf_items", {"slide_id": f"eq.{slide_id}", "select": "id,kind,term,text,created_at",
+    items = db.select("sf_items", {"slide_id": f"eq.{slide_id}", "select": "id,kind,term,occurrence_id,text,created_at",
                                    "order": "id"})
     order = {"card": 0, "desc": 1, "said": 2, "note": 3}
     items.sort(key=lambda i: (order.get(i["kind"], 9), i["id"]))

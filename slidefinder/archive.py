@@ -141,7 +141,7 @@ def render_session(course: str, s: dict, out_dir: Path) -> list[dict]:
         pix = page.get_pixmap(matrix=fitz.Matrix(IMAGE_WIDTH / page.rect.width, IMAGE_WIDTH / page.rect.width), alpha=False)
         im = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
         img_path, thumb_path = out_dir / f"{sid}.webp", out_dir / f"{sid}-thumb.webp"
-        if not img_path.exists():
+        if not (img_path.exists() and thumb_path.exists()):
             im.save(img_path, "WEBP", quality=80)
             im.resize((THUMB_WIDTH, round(im.height * THUMB_WIDTH / im.width)), Image.Resampling.LANCZOS).save(thumb_path, "WEBP", quality=75)
         rows.append({

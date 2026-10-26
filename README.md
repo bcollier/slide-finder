@@ -39,6 +39,7 @@ weak matches are flagged. Then: open the slide, read what I said, pick slides, e
 | --- | --- | --- |
 | it fits the data it has seen perfectly and falls apart on anything new | "The sweet spot, a balance of bias and variance" (70-445, Machine Learning Fundamentals, slide 67), matched through what I said over it | none |
 | how does a computer read a photo | "Images are Numbers" (45-884, Computer Vision Fundamentals, slide 29) | none |
+| too many numbers on one screen, what should I cut | "Identify and Eliminate Clutter" (45-885 Data Visualization, session 4; used in 2 terms) | none |
 
 [One sentence on why keyword search fails: the question uses everyday words and the slide uses
 the technical term; nothing overlaps.]

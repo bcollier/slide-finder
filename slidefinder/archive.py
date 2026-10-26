@@ -132,7 +132,18 @@ def page_pics(doc: "fitz.Document", page: "fitz.Page", min_frac: float = 0.06) -
 
 def clean_title(first_line: str) -> str:
     t = " ".join(first_line.split())[:140]
-    return t if re.search(r"[A-Za-z]{3,}", t) else ""  # OCR noise like "a0D OD" is not a title
+    if re.match(r"^(https?://|www\.)", t, re.I):
+        return ""  # a link is not a title
+    return t if re.search(r"[A-Za-z]{3,}", t) else ""  # OCR noise like "a0D OD" or a page number is not a title
+
+
+def title_of(lines: list[str]) -> str:
+    """The first line that reads as a title; page numbers and links above it are skipped."""
+    for line in lines[:3]:
+        t = clean_title(line)
+        if t:
+            return t
+    return ""
 
 
 def iter_sessions(course: str):
@@ -177,7 +188,7 @@ def render_session(course: str, s: dict, out_dir: Path) -> list[dict]:
         rows.append({
             "slide_id": sid, "course": course, "term": s["term"], "session": s["session"],
             "session_title": s["title"], "session_date": s["date"], "slide_number": n,
-            "title": clean_title(lines[0]) if lines else "", "text": text,
+            "title": title_of(lines), "text": text,
             "notes": notes[i] if i < len(notes) else "",
             "dhash": dhash(im), "pics": page_pics(doc, page), "drawings": len(page.get_drawings()), "text_hash": hashlib.sha1(" ".join(text.lower().split()).encode()).hexdigest()[:16],
             "image_path": f"slides/{course.replace('-', '')}/{sid}.webp",

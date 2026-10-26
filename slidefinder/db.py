@@ -54,6 +54,10 @@ def select_all(table: str, params: dict[str, Any] | None = None, page: int = 100
             return out
 
 
+def patch(table: str, params: dict, values: dict) -> None:
+    _check(_client.patch(f"/rest/v1/{table}", params=params, json=values, headers={"Prefer": "return=minimal"}))
+
+
 def delete(table: str, params: dict[str, Any]) -> None:
     _check(_client.delete(f"/rest/v1/{table}", params=params))
 

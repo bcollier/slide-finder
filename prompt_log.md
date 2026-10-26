@@ -216,6 +216,28 @@ stacked card with a tab per version ("Fall 2026 · AI for Business Leaders"), an
 swaps in that version's scores and match. Two copies from the same course and term never stack
 (those are different slides sharing a caption).
 
+> when opening a slide it is centered vertically so I hvae to scroll down to see it
+
+> why are the "what i said" boxes different here, they are from teh same slide same course
+
+They were two consecutive ~120-word chunks of one recording; the page now labels chunks
+"2024 Spring (M4) · part 1 of 2".
+
+> for these slides rather than say "untitled" create a title for them, these two slides seem to
+> obviously have a title
+
+614 slides had no title: the heading was inside a picture, or the first text line was a page
+number or a link. A first pass titled them from the extracted text and image description
+(cheap, but it paraphrased: "Business Advantages of Customer Segmentation" for a slide that
+says "Benefits of Customer Segmentation"). A second pass sends the slide image and asks for
+the heading exactly as printed; 858 slides re-titled (the text-only pass's results were
+replaced), cards and descriptions re-embedded. The deck reader now also skips page numbers
+and links when picking a title.
+
+> explain the score distance and meaning here, and make sure it is clear in the readme
+
+Added "Reading the numbers on a card" to README section 3, worked through one card.
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

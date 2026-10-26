@@ -89,7 +89,10 @@ no guest-speaker sessions; and one case-study session is skipped entirely.
   pdf.js, uploads the page images straight to storage, and the server embeds the text. The
   deck is searchable as soon as it finishes, under whatever course label I give it.
 - My archive was loaded in bulk with command-line loaders that render the decks, merge
-  repeats, write the image descriptions and match the transcripts.
+  repeats, write the image descriptions, match the transcripts, and title the slides whose
+  heading was inside a picture or whose first text line was a page number or a link (858
+  slides; Claude Haiku 4.5 reads the heading off the slide image, or writes a short title when
+  there is none).
 
 **Searching.** Type a question the way a student would ask it. The question is embedded with the
 same model as the slides (Voyage `voyage-3.5`). One SQL function then takes two lists of items:
@@ -99,9 +102,28 @@ its best item.
 
 Each result shows:
 - the thumbnail, course, term, session and slide number, and how many sessions used the slide;
-- which kinds of item matched, the scores (combined score, distance, rank by meaning, rank by
-  keyword);
+- which kinds of item matched, and the numbers explained below;
 - a "why" line quoting the best item, labeled "Slide says", "Image shows", "I said" or "My note".
+
+**Reading the numbers on a card.** Take a card that reads *score 0.0125 · distance 0.446 ·
+meaning #20 · keyword – · 1 item hit*.
+- *Meaning #20*: among every item in the index, this slide's closest item was the 20th closest
+  to the question by meaning (cosine distance between embeddings).
+- *Keyword –*: none of this slide's items matched the keyword search. Postgres full-text search
+  needs every word of the question to appear, so most long questions match nothing here; it is
+  kept for short exact terms such as "SMOTE" or "mtry", where it ranks those slides first.
+- *Score 0.0125*: the combined rank score (reciprocal rank fusion). Every item gets
+  1/(60 + rank) from the meaning list plus 1/(60 + rank) from the keyword list; a slide takes
+  its best item's score. Here 1/(60 + 20) = 0.0125 with nothing from keywords. A slide ranked
+  first on both lists would score 0.0328. Results are sorted by this score, highest first.
+- *Distance 0.446*: how far the question's embedding is from the slide's closest item. 0 would
+  be identical meaning, 1 unrelated. On-topic answers across my material run from about 0.35
+  to 0.50; when the best distance on the page is above 0.55 the page says "I don't think I
+  taught this" and shows the results as weak matches.
+- *1 item hit*: how many of the slide's items (card, image description, transcript chunks,
+  notes) appeared in either candidate list. More hits mean several kinds of evidence agree;
+  the ranking does not reward that, because measuring it showed a bonus made results worse
+  (section 5).
 
 The same slide often lives in more than one course (my customer segmentation slide is in three),
 and each course keeps its own copy so that what I said in that course stays with it. In the

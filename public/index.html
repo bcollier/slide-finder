@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slide Finder</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="top">
+  <h1><a href="/">Slide Finder</a></h1>
+  <form id="search" class="search" autocomplete="off">
+    <input id="q" type="search" placeholder="Ask it the way a student would: “it aced the practice problems but bombed the real test”" autofocus>
+    <select id="course" title="Course"><option value="">All courses</option></select>
+    <button type="submit">Find slides</button>
+  </form>
+  <div class="tools">
+    <label class="mode">Search <select id="mode"><option value="hybrid">meaning + keywords</option><option value="vector">meaning only</option><option value="keyword">keywords only</option></select></label>
+    <button id="picks-btn" class="ghost">Picked <span id="picks-count">0</span></button>
+    <button id="add-deck-btn" class="ghost">Add deck</button>
+  </div>
+</header>
+
+<main id="main">
+  <section id="status" class="status"></section>
+  <section id="results" class="grid"></section>
+</main>
+
+<dialog id="login">
+  <form method="dialog" id="login-form">
+    <h2>Passcode</h2>
+    <input id="passcode" type="password" autocomplete="current-password" required>
+    <p id="login-err" class="err"></p>
+    <button>Enter</button>
+  </form>
+</dialog>
+
+<dialog id="slide">
+  <div class="slide-view">
+    <button class="close" data-close>×</button>
+    <div class="slide-img"><img id="slide-img" alt=""></div>
+    <div class="slide-meta">
+      <h2 id="slide-title"></h2>
+      <p id="slide-where" class="where"></p>
+      <div class="actions">
+        <button id="pick-btn">Pick for new deck</button>
+        <a id="open-img" target="_blank" rel="noopener" class="ghost btn">Open image</a>
+      </div>
+      <h3>What I said</h3>
+      <div id="said"></div>
+      <h3>My notes</h3>
+      <ul id="notes"></ul>
+      <form id="note-form" class="note-form">
+        <textarea id="note-text" rows="2" placeholder="Add a note: “used this in the Deloitte workshop”, “good opener for AWS”" maxlength="2000"></textarea>
+        <button>Add note</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="picks">
+  <div class="picks-view">
+    <button class="close" data-close>×</button>
+    <h2>Picked slides</h2>
+    <p class="hint">In order. Export writes them into one PDF to start a new deck from.</p>
+    <ol id="picks-list"></ol>
+    <div class="actions">
+      <a href="/api/export.pdf" class="btn" id="export">Export PDF</a>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="add-deck">
+  <form id="deck-form" class="deck-form">
+    <button class="close" type="button" data-close>×</button>
+    <h2>Add a deck</h2>
+    <p class="hint">Pick a PDF. Your browser renders each page and pulls its text; nothing is stored until the deck is indexed. It is searchable as soon as this finishes.</p>
+    <input id="deck-file" type="file" accept="application/pdf" required>
+    <input id="deck-name" type="text" placeholder="Deck name (defaults to the file name)" maxlength="120">
+    <input id="deck-course" type="text" placeholder="Course label, e.g. 45-851 or “consulting”" maxlength="20" value="mine">
+    <p id="deck-status" class="hint"></p>
+    <button id="deck-go">Index it</button>
+  </form>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.mjs" type="module"></script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

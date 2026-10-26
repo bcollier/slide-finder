@@ -21,6 +21,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 from . import config, db, embed
 from .archive import ARCHIVE_COURSES, BUILD, term_key
@@ -49,28 +50,50 @@ class UnionFind:
         self.p[self.find(a)] = self.find(b)
 
 
+def dhash16(path: str) -> np.ndarray:
+    """A 256-bit difference hash of the thumbnail, for picture-only pages (the 64-bit one is too coarse)."""
+    g = np.asarray(Image.open(path).convert("L").resize((17, 16), Image.Resampling.LANCZOS), dtype=np.int16)
+    return (g[:, 1:] > g[:, :-1]).reshape(-1)
+
+
 def group_slides(rows: list[dict], E: np.ndarray) -> list[list[int]]:
-    uf = UnionFind(len(rows))
+    """Union pages that are the same slide. Rules, in words:
+    A. identical text (5+ words) and a similar image, or identical text of 25+ words (template may differ)
+    B. text-bearing pages whose cards embed within SIM and whose images are within HAMMING bits
+    C. picture-only pages (under 5 words) whose 256-bit hashes differ in at most 6 bits
+    """
+    n = len(rows)
+    uf = UnionFind(n)
+    words = np.array([len(r["text"].split()) for r in rows])
+    H = np.array([r["dhash"] for r in rows], dtype=np.uint64)
+    bits = np.unpackbits(H.view(np.uint8).reshape(n, 8), axis=1)
+    ham = (bits[:, None, :] != bits[None, :, :]).sum(axis=2)
+
     by_text = defaultdict(list)
     for i, r in enumerate(rows):
-        if len(r["text"].split()) >= 5:
+        if words[i] >= 5:
             by_text[r["text_hash"]].append(i)
     for idx in by_text.values():
         for j in idx[1:]:
-            uf.union(idx[0], j)
+            if ham[idx[0], j] <= 12 or words[j] >= 25:
+                uf.union(idx[0], j)
+
     En = E / np.linalg.norm(E, axis=1, keepdims=True)
     sims = En @ En.T
-    cand = np.argwhere(np.triu(sims >= SIM, k=1))
-    for i, j in cand:
-        if hamming(rows[i]["dhash"], rows[j]["dhash"]) <= HAMMING:
+    textual = words >= 5
+    for i, j in np.argwhere(np.triu((sims >= SIM) & (ham <= HAMMING), k=1)):
+        if textual[i] and textual[j]:
             uf.union(int(i), int(j))
-    H = np.array([r["dhash"] for r in rows], dtype=np.uint64)
-    bits = np.unpackbits(H.view(np.uint8).reshape(len(rows), 8), axis=1)  # 64 bits per row
-    dist = (bits[:, None, :] != bits[None, :, :]).sum(axis=2)  # pairwise Hamming distance
-    for i, j in np.argwhere(np.triu(dist <= 4, k=1)):
-        uf.union(int(i), int(j))
+
+    pic = np.where(~textual)[0]
+    if len(pic) > 1:
+        P = np.stack([dhash16(rows[i]["local_thumb"]) for i in pic])
+        d16 = (P[:, None, :] != P[None, :, :]).sum(axis=2)
+        for a, b in np.argwhere(np.triu(d16 <= 6, k=1)):
+            uf.union(int(pic[a]), int(pic[b]))
+
     groups = defaultdict(list)
-    for i in range(len(rows)):
+    for i in range(n):
         groups[uf.find(i)].append(i)
     return list(groups.values())
 
@@ -115,6 +138,7 @@ def main() -> None:
         images.append((c["thumb_path"], Path(c["local_thumb"])))
 
     t = time.time()
+    db.delete("sf_slides", {"course": f"eq.{course}"})  # a clean reload; items cascade
     db.upsert("sf_slides", slides, on_conflict="slide_id")
     db.upsert("sf_items", items, batch=100)
     print(f"upserted {len(slides)} slides + cards in {time.time() - t:.0f}s; totals: slides {db.count('sf_slides')}, items {db.count('sf_items')}")

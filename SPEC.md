@@ -21,11 +21,19 @@ to confirm in Step 5 against the real index:
 
 | Query | Should return | Shared words |
 | --- | --- | --- |
-| "how do we do segmentation" | Data Mining clustering slides (k-means, "grouping customers") | none: the slides say "clustering", "k-means", "centroids" |
-| "my model is great on training data and terrible on new data" | the overfitting / bias-variance slides | none: the slides say "overfitting", "variance", "generalization" |
+| "it aced the practice problems but bombed the real test" | "Generalization and Overfitting: The Bias-Variance Tradeoff" (45-851, Overview of classification) | none |
+| "which shoppers behave alike" | "Customer Segmentation" and the k-means slides (45-851, Clustering) | none: the slides say "customers", "segmentation", "clusters" |
 
-Backups if one fails: "how many groups should I pick" (elbow method / silhouette slides);
-"the computer reads the photo" (computer vision / CNN slides in 45-884).
+Backups: "the computer reads the photo" (computer vision / CNN slides in 45-884); "stop it from
+memorizing" (cross-validation / regularization).
+
+Dropped after checking the slide text in Step 3: "how do we do segmentation". The clustering deck
+has a slide titled "Customer Segmentation", so keyword search would find it too. It is still a
+good everyday query, just not proof. The same goes for "great on training data", since the
+variance slide says "training data".
+
+Step 3 result (15 hand-typed cards, default model): the overfitting query put the bias-variance
+slide first with zero shared words.
 
 Keyword search fails because the slide text uses the technical term and the question uses
 the everyday one.
@@ -147,6 +155,10 @@ labeling takes a few minutes, not an hour.
 
 **Metrics:** hit@5 (a good slide in the top 5), recall@10, and MRR. `slides eval` prints one row per
 configuration, and the winning configuration becomes the default. The table goes in the README.
+
+Distance: Chroma defaults to squared L2. Collections here are created with cosine distance
+(`configuration={"hnsw": {"space": "cosine"}}`), so 0 means identical and the cutoff in
+section 5 reads as 1 minus cosine similarity.
 
 Two collections can't share embeddings from different models, so each configuration is its own
 collection (`slides__minilm`, `slides__bge`, ...).

@@ -21,8 +21,8 @@ to confirm in Step 5 against the real index:
 
 | Query | Should return | Shared words |
 | --- | --- | --- |
-| "it aced the practice problems but bombed the real test" | "Generalization and Overfitting: The Bias-Variance Tradeoff" (45-851, Overview of classification) | none |
-| "which shoppers behave alike" | "Customer Segmentation" and the k-means slides (45-851, Clustering) | none: the slides say "customers", "segmentation", "clusters" |
+| "it aced the practice problems but bombed the real test" | "Generalization and Overfitting" (70-445 s05, slide 70; also 45-851 in phase 2) | none |
+| "which shoppers behave alike" | "Customer Segmentation" and the clustering slides (70-445 s05, slides 31 to 40; also 45-851 in phase 2) | none: the slides say "customers", "segmentation", "clusters" |
 
 Backups: "the computer reads the photo" (computer vision / CNN slides in 45-884); "stop it from
 memorizing" (cross-validation / regularization).
@@ -126,6 +126,34 @@ how my explanation changed: new examples, things I stopped saying, and how long 
 
 ## 4. Data
 
+### Two phases, for speed
+
+**Phase 1 (graded tonight): Faculty Twin's processed slides as the input dataset.** These are
+already built, de-identified and aligned:
+
+| Course | Sessions | Slides | Slides with what I said |
+| --- | --- | --- | --- |
+| 45-884 AI Methods for Social and Visual Data, Fall 2026 | 7 | 402 | 319 |
+| 70-445 AI for Business Leaders, Fall 2026 | 10 | 576 | 420 |
+| **Total** | **17** | **978** | **739** |
+
+The data is read from `~/Lecture Archive/_build`. Nothing from faculty-twin's code is imported.
+
+| File | Gives |
+| --- | --- |
+| `slides/<course>/sNN/slides.json` | slide id, title, text, speaker notes, flags, image and thumbnail paths |
+| `slides/<course>/sNN/deck.json` | session title and date |
+| `slides/<course>/sNN/*.webp` | slide images |
+| `align/<course>/sNN.json` | per slide: on-screen time windows (matched from video frames) and the de-identified transcript of those windows |
+
+This dataset is from one term only, so phase 1 builds the per-slide transcript view, but with one term in it.
+
+**Phase 2 (right after, starting with Data Mining): the raw archive.** Decks, transcripts and
+video from every term, using the pipeline below. This is what makes "history across terms" real.
+The loader writes the same record shape as phase 1, so search, `history` and the CLI don't change.
+
+### Raw archive (phase 2)
+
 Source: my lecture archive (`LECTURE_ARCHIVE`, default `~/Lecture Archive`), one folder per
 course, term and session, each with `slides.pdf` and/or `slides.pptx`. Many slides repeat
 across terms.
@@ -224,10 +252,14 @@ assumed:
 | Embedding model choice | Compare Chroma's default (all-MiniLM-L6-v2) with `BAAI/bge-small-en-v1.5`, plus Voyage if time allows | Same eval set, each model in its own collection |
 | Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Optional keyword pass fused with the vector ranks (reciprocal rank fusion) | Score with and without |
 
-**Eval set:** `eval/questions.jsonl`, 30 questions I'd actually type, each with the slide IDs
-that are good answers. Half use everyday words with no overlap with the slide (the hard case).
-The `judge` command shows the top 10 for a question and lets me mark the good ones by number, so
-labeling takes a few minutes, not an hour.
+**Eval set (phase 1):** Faculty Twin's labeled course questions: 28 with their correct slides
+(`expected_slides`) and 6 off-topic ones that should come back "not taught". They're read from
+`FT_EVAL_PATH`. The eval questions stay private: they're never copied into this repo, and only
+aggregate scores go in the README. This also gives a direct before/after against Faculty Twin's
+retrieval on the same questions.
+
+**Eval set (phase 2):** about 15 more of my own questions for Data Mining, labeled with the `judge`
+command. It shows the top 10 for a question and lets me mark the good ones by number.
 
 **Metrics:** hit@5 (a good slide in the top 5), recall@10, and MRR. `slides eval` prints one row per
 configuration, and the winning configuration becomes the default. The table goes in the README.
@@ -284,13 +316,13 @@ Built one step at a time, checking each one before the next. The times are budge
 | 1 | Idea, data, two queries | This spec | done |
 | 2 | Install Chroma, five-line check | Imports, creates a collection | 15 min |
 | 3 | Persistent smoke test | 15 hand-typed slide cards survive a restart | 15 min |
-| 4 | Ingest one course (Data Mining, all six terms), then the other four | slides.json + images, card items in Chroma, timing for 50 printed, unique-slide count | 45 min |
+| 4 | Load phase 1 (Faculty Twin build: 978 slides, 739 with transcript) as `card` + `said` items | Counts match, timing for 50 printed, 0 truncated items | 30 min |
 | 5 | Query and look at the distances | Both test queries checked; on-topic and off-topic distance ranges written down | 25 min |
 | 6 | Runtime add: `add deck`, `add note` | Added item shows up in the very next search | 20 min |
 | 7 | Do something: merge per slide, group, cutoff, open, pick, export | A new PDF comes out of three picks | 45 min |
-| 8 | Descriptions for the five courses (background run, texts me when done) | Every unique slide has a description | 20 min |
-| 8b | Slide history: instructor lines, video alignment, text fallback, `said` items, `history` command | `history` shows 3 Data Mining terms for the overfitting slide; spot-check written down | 60 min |
-| 9 | Eval: label 30 questions, compare configs | Table of hit@5 / MRR per configuration | 40 min |
+| 8 | Descriptions for the 978 slides (background run, texts me when done) and the `history` command on phase 1 | Every slide has a description; `history` shows what I said | 30 min |
+| 9 | Eval on the 28 + 6 questions, compare configs, Faculty Twin as baseline | Table of hit@5 / MRR per configuration | 40 min |
+| 12 | Phase 2: Data Mining raw decks, near-duplicate grouping, instructor lines, video alignment, text fallback, then the other courses | `history` shows 3 Data Mining terms for the overfitting slide; spot-check written down | after submission, or tonight if time allows |
 | 10 | README (first four sections in my own words), prompt log | Two separate files | 30 min |
 | 11 | Video, push, portfolio, form | Link works in an incognito window | 30 min |
 
@@ -301,12 +333,12 @@ text-matching fallback (history then covers sessions with video only). Steps 1 t
 
 | Decision | Recommendation |
 | --- | --- |
-| Faculty Twin was turned in for 15-113. The HW says new standalone project. | All new code, nothing imported from faculty-twin. The 17 existing slide/time alignments are used only as **input data**, and the README says so. |
+| Faculty Twin was turned in for 15-113. The HW says new standalone project. | **Decided:** phase 1 uses Faculty Twin's processed slides and alignments as **input data only**. All code is new, nothing is imported, and the README says plainly where the data came from. |
 | Public sample for graders | Two or three of my own decks with no student material, as a release download |
 | API key for descriptions | Anthropic key in this repo's `.env`, or the course's OpenAI credits |
 | Repo visibility | Private until submission, then public (or add the TAs) |
 
 ## 12. Not in this version
 
-A web UI, Faculty Twin integration, editing or deleting slides, video clips, and alignment from
-video frames.
+A web UI or cloud hosting (planned next: Chroma Cloud plus a small web page), Faculty Twin
+integration, editing or deleting slides, and video clips.

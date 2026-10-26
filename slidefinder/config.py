@@ -14,7 +14,8 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-PASSCODE = os.environ.get("SF_PASSCODE", "")
+# SF_OPEN=1 turns the passcode gate off without discarding the passcode (remove SF_OPEN to turn it back on).
+PASSCODE = "" if os.environ.get("SF_OPEN") else os.environ.get("SF_PASSCODE", "")
 
 BUCKET = "slide-finder"
 EMBED_MODEL = "voyage-3.5"

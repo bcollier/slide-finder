@@ -28,7 +28,7 @@ import numpy as np
 
 from . import config, db, embed
 from .archive import ARCHIVE_COURSES, BUILD, term_key, term_slug
-from .load_archive import COURSE_NAMES, group_slides
+from .load_archive import COURSE_NAMES, card_embeddings, group_slides
 from .text import card_text, said_chunks
 from .describe import load_cache as load_descriptions
 
@@ -88,19 +88,6 @@ def assign(sim: np.ndarray) -> list[int]:
     return path[::-1]
 
 
-def card_embeddings(course: str, rows: list[dict]) -> np.ndarray:
-    cache = BUILD / f"{course}.cards.npy"
-    if cache.exists():
-        E = np.load(cache)
-        if len(E) == len(rows):
-            return E
-    name = COURSE_NAMES[course]
-    cards = [card_text(name, r["session_title"], r["slide_number"], r["title"], r["text"], r["notes"]) for r in rows]
-    E = np.array(embed.embed_documents(cards, progress=lambda d, n: print(f"  cards {d}/{n}", file=sys.stderr)), dtype=np.float32)
-    np.save(cache, E)
-    return E
-
-
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("course", choices=ARCHIVE_COURSES)
@@ -110,7 +97,8 @@ def main() -> None:
     course = args.course
 
     rows = [json.loads(l) for l in (BUILD / f"{course}.jsonl").open()]
-    E = card_embeddings(course, rows)
+    name = COURSE_NAMES[course]
+    E = card_embeddings(course, [card_text(name, r["session_title"], r["slide_number"], r["title"], r["text"], r["notes"]) for r in rows])
     En = E / np.linalg.norm(E, axis=1, keepdims=True)
     canon = {}
     for g in group_slides(rows, E):
@@ -126,7 +114,6 @@ def main() -> None:
     # Slide text for matching: the card plus the image description (picture-only slides have no
     # text of their own, and lectures spend minutes on them).
     descs = load_descriptions()
-    name = COURSE_NAMES[course]
 
     sessions = {}
     for i, r in enumerate(rows):

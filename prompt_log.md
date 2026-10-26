@@ -184,6 +184,26 @@ lecture should be near 30% of the deck) settled the rest. Result on that session
 windows placed on 32 of 55 slides, in deck order. Windows that match nothing (admin, Q&A) are
 dropped rather than forced onto a slide.
 
+## 6c. Versions of the same slide (3:55 PM)
+
+> I get multiple versions of the same slide, how do we change that so it's smart enough to
+> understand these are different versions
+
+A search for customer segmentation showed the same "Customer Segmentation" slide three times,
+from three terms. The grouping rule had required a close whole-page image hash for short
+identical text, and each term uses a different deck template, so the same slide hashed
+differently every year. Relaxing to "identical text is the same slide" was measured and rejected:
+it merged 22 different "What's Wrong with this Picture?" pages and 12 different charts credited
+to the same author. The fix hashes the embedded pictures themselves (they survive a template
+change), and compares those: Data Mining went from 1,168 to 879 unique slides, with the merges
+checked by eye on contact sheets (the wrong merges that showed up along the way, a stock picture
+under different titles and the steps of a build-up sequence, each got a rule). Three courses
+regrouped and reloaded.
+
+> the about in the repo says it uses chrom
+
+The GitHub description was stale from Step 2 (Chroma); corrected.
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

@@ -63,9 +63,19 @@ and every term that used it is kept as an **occurrence**. Otherwise the top 10 w
 k-means slide six times.
 
 Exact hashes are too strict, because a slide that changed one word or the year between terms
-should still count as the same slide. Two slides are the same when both are true:
-- their card text embeddings are near-duplicates (cosine similarity ≥ 0.95, tuned in Step 5 by looking at pairs), and
-- their images are close (difference hash, Hamming distance ≤ 10 of 64 bits).
+should still count as the same slide. A hash of the whole page is also too strict in the other
+direction: every new term gets a new deck template, so the same slide renders differently each
+year. What survives a template change is the picture itself, so each embedded picture (any image
+covering at least 6% of the page) is hashed from the image file, not from the rendered page
+(256-bit difference hash; the same picture re-encoded differs by under 24 bits, different pictures
+by 40 or more, measured on Data Mining). Two pages are the same slide when any of these holds:
+- identical text (5+ words) and the same pictures, or no pictures on either and a similar page;
+  identical text of 25+ words counts on its own;
+- card text embeddings near-duplicate (cosine ≥ 0.95) and either the whole pages are close
+  (Hamming ≤ 10 of 64) or, across terms and not on a title slide, the same pictures;
+- picture-only pages (under 5 words) with the same picture and the same few words.
+A stock picture under different titles stays different slides, and so do build-up steps within
+one deck.
 
 This is a second use of the vector database: near-duplicate detection across terms.
 

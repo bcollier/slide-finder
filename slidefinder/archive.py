@@ -23,6 +23,7 @@ import time
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import numpy as np
 from PIL import Image
 
 from . import config
@@ -100,6 +101,35 @@ def dhash(im: Image.Image) -> int:
     return bits
 
 
+def pic_hash(im: Image.Image) -> str | None:
+    """A 256-bit difference hash of a picture as a hex string, or None for a flat image (a mask,
+    a placeholder, a plain background) whose hash would match every other flat image."""
+    g = np.asarray(im.convert("L").resize((17, 16), Image.Resampling.LANCZOS), dtype=np.int16)
+    bits = (g[:, 1:] > g[:, :-1]).reshape(-1)
+    if not 8 <= int(bits.sum()) <= 248:
+        return None
+    return np.packbits(bits).tobytes().hex()
+
+
+def page_pics(doc: "fitz.Document", page: "fitz.Page", min_frac: float = 0.06) -> list[str]:
+    """Hashes of the pictures placed on the page (each covering at least min_frac of it), largest first.
+    Hashed from the embedded image itself, so a picture keeps its hash when the deck template changes."""
+    out = []
+    area = page.rect.width * page.rect.height
+    for info in page.get_image_info(xrefs=True):
+        x0, y0, x1, y1 = info["bbox"]
+        frac = (x1 - x0) * (y1 - y0) / area
+        if frac < min_frac or not info.get("xref"):
+            continue
+        try:
+            h = pic_hash(Image.open(io.BytesIO(doc.extract_image(info["xref"])["image"])))
+        except Exception:
+            continue
+        if h and h not in [x for _, x in out]:
+            out.append((frac, h))
+    return [h for _, h in sorted(out, reverse=True)]
+
+
 def clean_title(first_line: str) -> str:
     t = " ".join(first_line.split())[:140]
     return t if re.search(r"[A-Za-z]{3,}", t) else ""  # OCR noise like "a0D OD" is not a title
@@ -149,7 +179,7 @@ def render_session(course: str, s: dict, out_dir: Path) -> list[dict]:
             "session_title": s["title"], "session_date": s["date"], "slide_number": n,
             "title": clean_title(lines[0]) if lines else "", "text": text,
             "notes": notes[i] if i < len(notes) else "",
-            "dhash": dhash(im), "text_hash": hashlib.sha1(" ".join(text.lower().split()).encode()).hexdigest()[:16],
+            "dhash": dhash(im), "pics": page_pics(doc, page), "drawings": len(page.get_drawings()), "text_hash": hashlib.sha1(" ".join(text.lower().split()).encode()).hexdigest()[:16],
             "image_path": f"slides/{course.replace('-', '')}/{sid}.webp",
             "thumb_path": f"slides/{course.replace('-', '')}/{sid}-thumb.webp",
             "local_image": str(img_path), "local_thumb": str(thumb_path),
@@ -157,11 +187,37 @@ def render_session(course: str, s: dict, out_dir: Path) -> list[dict]:
     return rows
 
 
+def add_pics(course: str) -> None:
+    """Add `pics` and `drawings` to rows already rendered, without re-rendering."""
+    out = BUILD / f"{course}.jsonl"
+    rows = [json.loads(l) for l in out.open()]
+    docs = {}
+    for s in iter_sessions(course):
+        pdf = s["pdf"] or BUILD / "converted" / course / term_slug(s["term"]) / "slides.pdf"
+        if pdf.exists():
+            docs[(s["term"], s["session"])] = pdf
+    opened: dict[tuple, "fitz.Document"] = {}
+    for r in rows:
+        key = (r["term"], r["session"])
+        if key not in opened:
+            opened.clear()
+            opened[key] = fitz.open(docs[key])
+        page = opened[key][r["slide_number"] - 1]
+        r["pics"], r["drawings"] = page_pics(opened[key], page), len(page.get_drawings())
+    with out.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    print(f"{course}: picture hashes added to {len(rows)} pages; {sum(1 for r in rows if r['pics'])} pages have a picture")
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("course", choices=ARCHIVE_COURSES)
     p.add_argument("--limit", type=int, help="only the first N sessions")
+    p.add_argument("--pics-only", action="store_true", help="add picture hashes to an existing build/<course>.jsonl")
     args = p.parse_args()
+    if args.pics_only:
+        return add_pics(args.course)
 
     out_dir = BUILD / "slides" / args.course.replace("-", "")
     out_dir.mkdir(parents=True, exist_ok=True)

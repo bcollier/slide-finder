@@ -4,9 +4,11 @@
     python -m slidefinder.load_archive 45-851 --skip-images
 
 Reads build/<course>.jsonl from archive.py. Two pages are the same slide when any of these holds:
-  - identical text (at least five words), whatever the template looks like
-  - card embeddings with cosine similarity >= SIM and image hashes within HAMMING bits
-  - near-identical images (within 4 bits), for picture-only pages
+  - identical text (at least five words) and the same pictures, whatever the template looks like
+  - card embeddings with cosine similarity >= SIM and the same pictures (or whole page)
+  - the same picture, for picture-only pages
+Pictures are hashed from the embedded image files, so a slide pasted into a new term's template
+still groups with its earlier copies.
 The copy from the newest term is indexed; every term that used the slide is kept in `used_in`.
 This near-duplicate grouping is a second use of the vector embeddings.
 """
@@ -29,6 +31,7 @@ from .load import upload_images
 from .text import card_text
 
 SIM, HAMMING = 0.95, 10
+MAX_DRAWING_DIFF = 25  # pages without pictures: same slide unless their vector-drawing counts differ by more
 COURSE_NAMES = {k: v.split(" ", 1)[1] for k, v in ARCHIVE_COURSES.items()}
 
 
@@ -56,34 +59,79 @@ def dhash16(path: str) -> np.ndarray:
     return (g[:, 1:] > g[:, :-1]).reshape(-1)
 
 
+PIC_BITS = 24  # of 256: the same picture re-encoded differs by under 24 bits; different pictures by 40 or more (measured on Data Mining)
+
+
+def usable_pics(hashes: list[str]) -> list[str]:
+    """Drop near-flat pictures (a tint, a faded overlay, a placeholder): their hashes are alike on
+    every page that carries one. Order (largest picture first) is kept."""
+    return [h for h in hashes if 20 <= bin(int(h, 16)).count("1") <= 236]
+
+
+def pics_match(a: list[str], b: list[str], bits: int = PIC_BITS) -> bool:
+    """Two pages show the same pictures: the largest picture on each is the same one, and every
+    picture on one page has a match on the other. A page that adds a picture (a build-up step)
+    is a different slide."""
+    if not a or not b or len(a) != len(b):
+        return False
+    if hamming(int(a[0], 16), int(b[0], 16)) > bits:
+        return False
+    return all(any(hamming(int(x, 16), int(y, 16)) <= bits for y in b) for x in a)
+
+
 def group_slides(rows: list[dict], E: np.ndarray) -> list[list[int]]:
-    """Union pages that are the same slide. Rules, in words:
-    A. identical text (5+ words) and a similar image, or identical text of 25+ words (template may differ)
-    B. text-bearing pages whose cards embed within SIM and whose images are within HAMMING bits
-    C. picture-only pages (under 5 words) whose 256-bit hashes differ in at most 6 bits
+    """Union pages that are the same slide. Pictures are compared by hashes of the embedded
+    image files (`pics`), which survive a change of deck template; the whole-page hash does not.
+    Rules, in words:
+    A. identical text (5+ words) and the same pictures (or no pictures and a similar page), or
+       identical text of 25+ words
+    B. text-bearing pages whose cards embed within SIM and whose pictures (or whole pages) match
+    C. picture-only pages (under 5 words) with the same picture and the same words, or near-identical whole pages
     """
     n = len(rows)
     uf = UnionFind(n)
     words = np.array([len(r["text"].split()) for r in rows])
+    pics = [usable_pics(r.get("pics") or []) for r in rows]
     H = np.array([r["dhash"] for r in rows], dtype=np.uint64)
     bits = np.unpackbits(H.view(np.uint8).reshape(n, 8), axis=1)
     ham = (bits[:, None, :] != bits[None, :, :]).sum(axis=2)
+
+    def same_pictures(i: int, j: int) -> bool:
+        if pics[i] and pics[j]:
+            return pics_match(pics[i], pics[j])
+        if not pics[i] and not pics[j]:
+            # No pictures on either page: text and vector drawings only. The same slide when the
+            # whole pages look alike or neither carries a drawn figure the other lacks.
+            return ham[i, j] <= 12 or abs(rows[i].get("drawings", 0) - rows[j].get("drawings", 0)) <= MAX_DRAWING_DIFF
+        return False  # a picture on one page and none on the other
 
     by_text = defaultdict(list)
     for i, r in enumerate(rows):
         if words[i] >= 5:
             by_text[r["text_hash"]].append(i)
     for idx in by_text.values():
-        for j in idx[1:]:
-            if ham[idx[0], j] <= 12 or words[j] >= 25:
-                uf.union(idx[0], j)
+        for a, i in enumerate(idx):
+            for j in idx[a + 1:]:
+                if words[j] >= 25 or same_pictures(i, j):
+                    uf.union(i, j)
 
     En = E / np.linalg.norm(E, axis=1, keepdims=True)
     sims = En @ En.T
     textual = words >= 5
-    for i, j in np.argwhere(np.triu((sims >= SIM) & (ham <= HAMMING), k=1)):
-        if textual[i] and textual[j]:
-            uf.union(int(i), int(j))
+    for i, j in np.argwhere(np.triu(sims >= SIM, k=1)):
+        i, j = int(i), int(j)
+        if not (textual[i] and textual[j]):
+            continue
+        both = bool(pics[i] and pics[j])
+        if ham[i, j] <= HAMMING and not (both and not pics_match(pics[i], pics[j])):
+            # Whole pages alike, and the pictures do not say otherwise (the steps of a build-up
+            # sequence share a title on a mostly white page but carry different pictures).
+            uf.union(i, j)
+        elif (both and pics_match(pics[i], pics[j]) and rows[i]["term"] != rows[j]["term"]
+              and rows[i]["slide_number"] > 1 and rows[j]["slide_number"] > 1):
+            # Same pictures, lightly edited text, new template. Only across terms, never for
+            # title slides.
+            uf.union(i, j)
 
     pic = np.where(~textual)[0]
     if len(pic) > 1:
@@ -91,11 +139,30 @@ def group_slides(rows: list[dict], E: np.ndarray) -> list[list[int]]:
         d16 = (P[:, None, :] != P[None, :, :]).sum(axis=2)
         for a, b in np.argwhere(np.triu(d16 <= 6, k=1)):
             uf.union(int(pic[a]), int(pic[b]))
+        for a in range(len(pic)):
+            for b in range(a + 1, len(pic)):
+                i, j = int(pic[a]), int(pic[b])
+                # Same picture and the same few words (or none): a stock picture under different
+                # titles is different slides.
+                if pics[i] and pics[j] and rows[i]["text_hash"] == rows[j]["text_hash"] and pics_match(pics[i], pics[j]):
+                    uf.union(i, j)
 
     groups = defaultdict(list)
     for i in range(n):
         groups[uf.find(i)].append(i)
     return list(groups.values())
+
+
+def card_embeddings(course: str, cards: list[str]) -> np.ndarray:
+    """Card embeddings for build/<course>.jsonl, cached next to it (regrouping must not re-embed)."""
+    cache = BUILD / f"{course}.cards.npy"
+    if cache.exists():
+        E = np.load(cache)
+        if len(E) == len(cards):
+            return E
+    E = np.array(embed.embed_documents(cards, progress=lambda d, n: print(f"  embedded {d}/{n}", file=sys.stderr)), dtype=np.float32)
+    np.save(cache, E)
+    return E
 
 
 def main() -> None:
@@ -109,7 +176,7 @@ def main() -> None:
     print(f"{course}: {len(rows)} pages from {len({r['term'] for r in rows})} terms")
     cards = [card_text(name, r["session_title"], r["slide_number"], r["title"], r["text"], r["notes"]) for r in rows]
     t = time.time()
-    E = np.array(embed.embed_documents(cards, progress=lambda d, n: print(f"  embedded {d}/{n}", file=sys.stderr)), dtype=np.float32)
+    E = card_embeddings(course, cards)
     print(f"embedded {len(cards)} cards in {time.time() - t:.0f}s")
 
     t = time.time()

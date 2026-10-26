@@ -162,6 +162,19 @@ $('#deck-form').addEventListener('submit', async e => {
   btn.disabled = false;
 });
 
+const EXAMPLES = [
+  'how do I group customers into meaningful segments',
+  'how do I predict demand in the future',
+  'teach the machine by rewarding it when it does well',
+  'how does a computer read a photo',
+  'why does the chatbot make things up',
+  'how do I get an AI to do a multi-step job on its own',
+  'what should a company do first with AI',
+  'it fits the data it has seen perfectly and falls apart on anything new',
+  'how are the words in a sentence turned into numbers',
+  'how do I find the main themes in a pile of documents',
+];
+
 // ---- misc ------------------------------------------------------------------
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
 document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
@@ -179,10 +192,7 @@ async function init() {
   await Promise.all([loadCourses(), refreshPicks()]);
   const h = decodeURIComponent(location.hash.slice(1));
   if (h) { q.value = h; run(); }
-  else results.innerHTML = `<div class="empty"><p>Try one of these:</p>
-    <button class="ghost ex">it aced the practice problems but bombed the real test</button>
-    <button class="ghost ex">which shoppers behave alike</button>
-    <button class="ghost ex">how does a computer read a photo</button></div>`;
+  else results.innerHTML = `<div class="empty"><p>Try one of these:</p>` + EXAMPLES.map(x => `<button class="ghost ex">${esc(x)}</button>`).join('') + `</div>`;
 }
 results.addEventListener('click', e => { if (e.target.classList.contains('ex')) { q.value = e.target.textContent; run(); } });
 init();

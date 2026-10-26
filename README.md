@@ -130,8 +130,9 @@ meaning #20 · keyword – · 1 item hit*.
   the ranking does not reward that, because measuring it showed a bonus made results worse
   (section 5).
 
-**Why each card was chosen.** Under the numbers, every card carries four views of its evidence,
-built from real data for that search:
+**Why a slide was chosen.** A result card shows the best-matching sentence of its best item.
+Opening the slide shows, under "Why this slide was chosen", four views of its evidence for the
+search that found it:
 - *In words, with the score split.* One sentence states the cause ("Ranked here because its
   narration was the 1st closest item in the whole index (distance 0.46); no keyword match"),
   and a bar shows the score split into its meaning part and its keyword part.
@@ -141,14 +142,13 @@ built from real data for that search:
   shaded zone past it is where results stop being trusted. A green marker shows the best
   distance on the page, so each card can be read against the best one. Keyword-only hits have
   no distance and get a sentence instead of a dot.
-- *Evidence ledger* (under "Evidence"). One row per matched item with a closeness bar, its
+- *Evidence ledger.* One row per matched item with a closeness bar, its
   distance and its rank on each side, then "Did not match: 2 narration chunks, 1 image" so
   absences show too.
 - *Heat text.* The full text of the closest item with each sentence shaded by how close it is
   to the question on its own, and the question's words underlined. This is one extra embedding
   call per page of results (all sentences of the top 40 slides in one parallel batch, about
   a second).
-The "Evidence" section can be collapsed; the page remembers the choice.
 
 The same slide often lives in more than one course (my customer segmentation slide is in three),
 and each course keeps its own copy so that what I said in that course stays with it. In the

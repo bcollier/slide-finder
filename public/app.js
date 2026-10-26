@@ -49,6 +49,7 @@ function render(d) {
       (d.best_distance != null ? ` (best distance ${d.best_distance.toFixed(2)}).` : '.') + `</span>`
     : `${n} slide${n === 1 ? '' : 's'}` + (d.best_distance != null ? ` · best distance ${d.best_distance.toFixed(2)}` : '');
   stacks = d.results; lastResult = d;
+  for (const r of d.results) for (const v of (r.versions || [r])) evidenceById[v.slide.slide_id] = v;
   qstems = new Set((d.question || '').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w.toLowerCase())).map(stem));
   results.innerHTML = d.results.map((r, i) => {
     const vs = r.versions || [r];
@@ -75,8 +76,16 @@ function cardInner(stackTop, i, k) {
           <span>keyword <b>${r.fts_rank == null ? '–' : '#' + r.fts_rank}</b></span>
           <span>${r.items} item${r.items === 1 ? '' : 's'} hit</span>
         </div>
-        ${evidence(r, s)}
+        ${bestLine(r)}
       </div>`;
+}
+const evidenceById = {};
+function bestLine(r) {
+  const it = (r.evidence || {}).items?.[0], w = r.why || {};
+  const best = it && it.sentences && it.sentences.length ? it.sentences.slice().sort((a, b) => a.dist - b.dist)[0] : null;
+  if (best) return `<div class="why"><b>${KIND[it.kind]}:</b> ${esc(best.text)}</div>`;
+  const whyLabel = { card: 'Slide says', said: 'Narration', note: 'My note', desc: 'Image shows' }[w.kind] || '';
+  return `<div class="why"><b>${whyLabel}:</b> ${esc(w.text || '').replace(/^\[[^\]]*\]\s*/, '')}</div>`;
 }
 const STOP = new Set('a an the of to in on for and or is are was were be been how do does did i my we you it this that what which with by as at from into can should would will when where why'.split(' '));
 const stem = w => w.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5);
@@ -125,12 +134,10 @@ function evidence(r, s) {
   } else B = markWords(it.text);
   const best = it.sentences && it.sentences.length ? it.sentences.slice().sort((a, b) => a.dist - b.dist)[0] : null;
   const quote = best ? `<div class="why"><b>Best sentence</b> (${best.dist.toFixed(2)}): ${esc(best.text)}</div>` : `<div class="why"><b>${KIND[it.kind]}:</b> ${markWords(it.text.slice(0, 200))}</div>`;
-  return `${D}${C}${quote}<details class="evidence"${evidenceOpen ? ' open' : ''}><summary>Evidence</summary>${A}
-    <div class="heat-head"><span class="kind ${it.kind}">${KIND[it.kind]}</span> <span class="hint">each sentence shaded by its own closeness · <mark>underlined</mark> = a word from the question</span></div><div class="heat">${B}</div></details>`;
+  return `${D}${C}${quote}<div class="evidence">${A}
+    <div class="heat-head"><span class="kind ${it.kind}">${KIND[it.kind]}</span> <span class="hint">each sentence shaded by its own closeness · <mark>underlined</mark> = a word from the question</span></div><div class="heat">${B}</div></div>`;
 }
-let lastResult = null, evidenceOpen = true;
-try { evidenceOpen = localStorage.getItem('sf_evidence') !== 'closed'; } catch (e) {}
-results.addEventListener('toggle', e => { if (e.target.classList.contains('evidence')) { evidenceOpen = e.target.open; try { localStorage.setItem('sf_evidence', evidenceOpen ? 'open' : 'closed'); } catch (x) {} } }, true);
+let lastResult = null;
 results.addEventListener('click', e => {
   const v = e.target.closest('.ver');
   if (!v) return;
@@ -157,6 +164,8 @@ async function openSlide(id) {
   currentSlide = d.slide;
   $('#slide-img').src = d.image || ''; $('#open-img').href = d.image || '#';
   $('#slide-title').textContent = d.slide.title || '(untitled)';
+  const ev = evidenceById[id];
+  $('#why').innerHTML = ev && lastResult ? `<h3>Why this slide was chosen</h3><p class="hint">for “${esc(lastResult.question)}”</p>${evidence(ev, ev.slide)}` : '';
   $('#slide-where').textContent = where(d.slide) + (d.slide.used_in?.length > 1 ? `\nAlso used in: ${d.slide.used_in.slice(1).join('; ')}` : '');
   $('#said').innerHTML = d.occurrences.length ? d.occurrences.map(occBlock).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
   $('#versions').innerHTML = (d.versions || []).length ? `<h3>Also in other courses</h3><p class="hint">The same slide, as taught elsewhere, with that course's narration.</p>` + d.versions.map(v => `

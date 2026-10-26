@@ -148,9 +148,11 @@ The data is read from `~/Lecture Archive/_build`. Nothing from faculty-twin's co
 
 This dataset is from one term only, so phase 1 builds the per-slide transcript view, but with one term in it.
 
-**Phase 2 (right after, starting with Data Mining): the raw archive.** Decks, transcripts and
-video from every term, using the pipeline below. This is what makes "history across terms" real.
-The loader writes the same record shape as phase 1, so search, history and the page don't change.
+**Phase 2 (done Oct 26 for decks; transcripts later): the raw archive.** Decks from every term,
+using the pipeline below. Loaded Oct 26: 45-851 (2,210 pages → 1,169 unique slides, 6 terms),
+45-885 (2,154 → 799, 5 terms), 46-887 (317 → 261). Index total: 3,171 unique slides, 4,733 items.
+Transcripts and video alignment for these courses are the next step; the loader writes the same
+record shape as phase 1, so search, history and the page don't change.
 
 ### Raw archive (phase 2)
 

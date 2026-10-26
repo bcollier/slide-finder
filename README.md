@@ -5,60 +5,145 @@ where I taught it, ranked, with what I said in class while each one was on scree
 
 Live (passcode): https://slide-finder.vercel.app
 
-Built for CMU 15-114 HW6 (Build a Vector Database App), October 26, 2026.
-
-<!-- Ben: sections 1 to 4 are yours to write in your own words. Notes in brackets are what the
-assignment asks each one to cover; delete them when done. -->
-
 ## 1. What it does and why I built it
 
-[1 to 2 sentences. Why: Faculty Twin's retrieval was poor; I want to find my own slides and
-what I said about them, across every term, when building a new deck.]
+Slide Finder searches every slide I have taught since Fall 2023, across five courses, by what the
+question means rather than the words it uses. It also shows what I said in class while each
+slide was on screen. I built it for two reasons. Retrieval in my earlier project, Faculty Twin,
+missed too often, and I wanted a small project to work out how to get retrieval right and to
+prove it with numbers. And when I build a new deck, I want to find the slide where I already
+explained something, whatever course or term it was in, and pull it into the new deck.
 
 ## 2. What is in the database
 
-[Where the data came from (my lecture archive; phase 1 used the slide images, text and
-de-identified transcript alignments I had already processed for Faculty Twin, as input data
-only). What one item is: a slide has several items, a "card" (deck, session, title, slide text,
-speaker notes), a description of the image written by a vision model, ~120-word chunks of what I
-said over it, and notes I add. How many: 3,171 unique
-slides from 5,900 deck pages (five courses, every term since Fall 2023; 2,729 pages were repeats of a
-slide from another term), 8,647 searchable items (3,171 cards, 3,171 image descriptions, 2,305 transcript chunks). What I said
-is attached to 1,039 slides: 739 from video-matched recordings (two Fall 2026 courses) and 300 from
-text-matched recordings (Data Mining 2023 Fall and 2024 Spring, Data Visualization, one ML session),
-which the page labels "lower confidence". Metadata: course, term, session, slide number, which terms
-used the slide. Repeated slides across terms are grouped into one.]
+**Where the data comes from.** My own lecture archive: one folder per course, term and session,
+with the deck (`slides.pdf` and/or `slides.pptx`) and, for recorded sessions, a de-identified
+timed transcript. Two Fall 2026 courses came in first (phase 1), using the slide images, text,
+speaker notes and video-matched transcripts I had already processed for Faculty Twin. That was
+input data only: none of Faculty Twin's code is used. The other three courses were read from the
+raw decks for every term (phase 2).
+
+| Course | Terms | Deck pages | Unique slides |
+| --- | --- | --- | --- |
+| 45-851 Data Mining | 6 (2023 Fall to 2025 Fall) | 2,210 | 1,169 |
+| 45-885 Data Visualization | 5 (2024 Spring to 2026 Spring) | 2,154 | 799 |
+| 46-887 Machine Learning for Business Applications | 2026 Spring | 317 | 261 |
+| 70-445 AI for Business Leaders | 2026 Fall | 576 | 576 |
+| 45-884 AI Methods for Social and Visual Data | 2026 Fall | 366 | 366 |
+| **Total** | | **5,623** | **3,171** |
+
+**Repeated slides are stored once.** The same slide comes back term after term, often with a
+word or the year changed. Without merging, the top ten results would be one k-means slide six
+times. Two pages count as the same slide when any of these holds:
+- their text is identical;
+- their text embeddings are at least 0.95 similar and the images look alike (a 64-bit image
+  hash within 10 bits);
+- they are picture-only pages with near-identical images.
+
+That merged 2,452 pages into slides from other sessions. The newest copy is the one indexed, and
+every session that used it is listed: 1,067 slides were used more than once, and one Data
+Visualization slide was used in 25 sessions.
+
+**What one item is.** The unit I want back is a slide, but each slide is stored as several
+searchable items, each with its own embedding:
+
+| Item | What its text is | Count |
+| --- | --- | --- |
+| card | Course, session, slide number and title, then the slide's own text and speaker notes | 3,171 |
+| image description | 60 to 90 words from a vision model (Claude Haiku 4.5) on what the slide shows: the chart and what it plots, the diagram, the code, the photo. This is what makes picture-only slides findable. | 3,171 |
+| what I said | About 120 words of what I said while the slide was on screen, split on sentence boundaries | 2,305 |
+| note | Anything I add from the page ("used this in the Deloitte workshop") | added at runtime |
+
+That is 8,647 searchable items. Search matches items, then merges them back into slides.
+
+**What I said, and how sure it is.** 1,039 slides have what I said attached:
+- 713 slides in the two Fall 2026 courses were matched by video: frames from the recording
+  were compared with the slide images, so the times are when the slide was actually on screen.
+- 326 slides in the older courses were matched by text. My lines were cut into 45-second
+  windows and each window was assigned to the slide it most resembles, in order through the
+  deck. The page labels these "lower confidence". They cover Data Mining 2023 Fall and 2024
+  Spring, Data Visualization 2024 Spring and 2026 Spring, and one Machine Learning session.
+
+**Metadata on every slide:** course and course name, term, session number, title and date,
+slide number, title, slide text, speaker notes, image description, the image and thumbnail, and
+the list of sessions that used it. Each "what I said" record also keeps the term, the session,
+the time windows, how it was matched and the confidence.
+
+**Kept out:** everything in transcripts except my own lines (only lines labeled as the
+instructor are read; raw caption files are never read); no student presentation decks;
+no guest-speaker sessions; and one case-study session is skipped entirely.
 
 ## 3. Adding and searching
 
-[Add: a note on any slide, searchable immediately; a whole PDF deck from the browser. Search: type
-a question; meaning and keyword matches are fused; results are grouped per slide with scores;
-weak matches are flagged. Then: open the slide, read what I said, pick slides, export a PDF.]
+**Adding while it runs.**
+- *A note on any slide.* Open a slide, type a note, press Add note. The note is embedded and
+  stored as a new item on that slide, so the next search finds it.
+- *A whole deck.* Add deck takes a PDF. The browser renders each page and pulls its text with
+  pdf.js, uploads the page images straight to storage, and the server embeds the text. The
+  deck is searchable as soon as it finishes, under whatever course label I give it.
+- My archive was loaded in bulk with command-line loaders that render the decks, merge
+  repeats, write the image descriptions and match the transcripts.
 
-## 4. Two queries that keyword search would miss
+**Searching.** Type a question the way a student would ask it. The question is embedded with the
+same model as the slides (Voyage `voyage-3.5`). One SQL function then takes two lists of items:
+the closest by meaning (cosine distance in pgvector) and the best keyword matches (Postgres full
+text search). It combines them by rank. Items are merged per slide, and each slide is ranked by
+its best item.
 
-[Required. Fill from the tested list:]
+Each result shows:
+- the thumbnail, course, term, session and slide number, and how many sessions used the slide;
+- which kinds of item matched, the scores (combined score, distance, rank by meaning, rank by
+  keyword);
+- a "why" line quoting the best item, labeled "Slide says", "Image shows", "I said" or "My note".
 
-| Query | Slide it returns | Words in common |
+The page has a course filter, a search mode (meaning + keywords, meaning only, keywords only),
+and a slider for 5 to 100 results.
+
+When even the best match is far away (cosine distance above 0.55), the page says "I don't think
+I taught this" and still shows the closest slides, marked as weak. The 0.55 cutoff came from
+measured distances: on-topic questions came in at 0.46 to 0.50, off-topic ones at 0.58 to 0.60
+(`eval/step5_distances.md`).
+
+**Then.** Open a slide to see it full size. Under it is what I said over it, term by term, with
+the time it was on screen and how it was matched, plus the exact text of every item indexed for
+it. Pick slides for a new deck; the list is kept in the database, so it follows me between
+computers. Export the picked slides, in order, as one PDF to start the new deck from.
+
+## 4. Queries that keyword search would miss
+
+Run on the live index (all courses, meaning + keywords) on October 26. In each case keyword-only
+search returns nothing at all.
+
+| Query | Slide it returns first | Words in common with the slide |
 | --- | --- | --- |
-| it fits the data it has seen perfectly and falls apart on anything new | "The sweet spot, a balance of bias and variance" (70-445, Machine Learning Fundamentals, slide 67), matched through what I said over it | none |
-| how does a computer read a photo | "Images are Numbers" (45-884, Computer Vision Fundamentals, slide 29) | none |
-| too many numbers on one screen, what should I cut | "Identify and Eliminate Clutter" (45-885 Data Visualization, session 4; used in 2 terms) | none |
+| it fits the data it has seen perfectly and falls apart on anything new | "The sweet spot, a balance of bias and variance" (70-445, Machine Learning Fundamentals, slide 67), matched through what I said over it, distance 0.50 | none |
+| how are the words in a sentence turned into numbers | "Models Need Tokens to Think" (70-445, How Large Language Models Work, slide 54), distance 0.47 | none |
+| how do I find the main themes in a pile of documents | "NLP for Topic Clustering" (45-884, Natural Language Processing, slide 47), distance 0.52 | none |
 
-[One sentence on why keyword search fails: the question uses everyday words and the slide uses
-the technical term; nothing overlaps.]
+Keyword search fails because the question uses everyday words and the slide uses the technical
+term ("overfitting", "tokens", "topic clustering"). Postgres also needs every word of the
+question to appear, so a long question in plain English matches nothing.
 
-Others that work: "why does the chatbot make things up" → Hallucinations; "teach the machine by
-rewarding it when it does well" → Reinforcement Learning with Human Feedback; "how are the words
-in a sentence turned into numbers" → Tokens In, Vectors Inside, Tokens Out.
+Others that work: "teach the machine by rewarding it when it does well" returns the
+reinforcement learning from human feedback slides ("The second kind of label: comparisons",
+then "Reinforcement Learning with Human Feedback"). "How do I get an AI to do a multi-step job
+on its own" returns "Key concepts of agentic AI". "Why does the chatbot make things up" returns
+"Hallucinations".
 
-One that does not: "it aced the practice problems but bombed the real test". The embedding reads
-it as being about exams. See `eval/step5_distances.md`.
+Where the keyword side gets in the way: for "how does a computer read a photo", the one slide
+whose image description contains all of "computer", "read" and "photo" ranks first, and "Images
+are Numbers" (45-884, Computer Vision Fundamentals, slide 29), the slide I wanted, comes second.
+
+One that does not work: "it aced the practice problems but bombed the real test". The embedding
+reads it as being about exams, so the best match is 0.60 away and the page says "I don't think I
+taught this", even though the overfitting slides are what it means. Metaphors that are two steps
+away from the concept miss; see `eval/step5_distances.md`.
 
 ## 5. Retrieval scores
 
 Measured with `eval/run.py` on 28 labeled questions from two courses (private file; aggregates
-only here), searching within the question's course. Final index: 3,171 slides, 7,904 items.
+only here), searching within the question's course. Index at the time: 3,171 slides, 7,904 items (before
+the text-matched transcripts were added; it now has 8,647).
 
 | Mode | hit@1 | hit@5 | recall@10 | MRR | off-topic flagged |
 | --- | --- | --- | --- | --- | --- |
@@ -127,9 +212,7 @@ was wrong. The "where it got it wrong" list is in the prompt log.
 Slide images and transcripts are mine; transcripts were de-identified before any of this (only my
 own lines are indexed). Nothing from the archive, the database, or `.env` is committed.
 
-<!-- AI-generated documentation below this line -->
-
-# Technical reference (AI-generated)
+# Technical reference
 
 This part describes how Slide Finder is built, completely enough that it can be understood
 without reading the code. It describes the code on `main` and the database as loaded on

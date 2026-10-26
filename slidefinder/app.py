@@ -29,7 +29,7 @@ from . import config, db, embed, search
 from .text import card_text
 
 app = FastAPI(title="Slide Finder", docs_url=None, redoc_url=None)
-PUBLIC = config.ROOT / "public"
+PUBLIC = config.ROOT / "web"
 COOKIE = "sf_session"
 
 
@@ -238,4 +238,4 @@ def index():
     return FileResponse(PUBLIC / "index.html")
 
 
-app.mount("/static", StaticFiles(directory=PUBLIC), name="static")
+app.mount("/static", StaticFiles(directory=PUBLIC, check_dir=False), name="static")

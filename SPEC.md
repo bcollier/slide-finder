@@ -332,7 +332,7 @@ slidefinder/
   search.py          # merge per slide, cutoff, grouping
   load.py            # phase 1 loader (CLI), later the raw archive
   describe.py        # vision descriptions + cache
-public/              # index.html, app.js, app.css
+web/                 # index.html, app.js, app.css
 supabase/migrations/ # schema + sf_search
 eval/run.py
 ```

@@ -1,0 +1,9 @@
+.venv
+chroma_store
+scripts
+eval
+build
+cache
+data
+*.md
+.env

@@ -5,8 +5,6 @@ where I taught it, ranked, with what I said in class while each one was on scree
 
 Live (passcode): https://slide-finder.vercel.app
 
-<!-- AI-generated documentation below this line (Ben's own thoughts are at the end) -->
-
 ## 1. What it does and why I built it
 
 Slide Finder searches every slide I have taught since Fall 2023, across five courses, by what the
@@ -209,15 +207,12 @@ See `prompt_log.md`. Claude Code (Claude Opus 5.5, then Claude Fable 5.1) wrote 
 descriptions, one step at a time; I tested each deployed version in the browser and sent back what
 was wrong. The "where it got it wrong" list is in the prompt log.
 
-This README was also written by Claude Code, from what it built and measured; my own thoughts are
-at the end.
-
 ## Privacy
 
 Slide images and transcripts are mine; transcripts were de-identified before any of this (only my
 own lines are indexed). Nothing from the archive, the database, or `.env` is committed.
 
-# Technical reference (AI-generated)
+# Technical reference
 
 This part describes how Slide Finder is built, completely enough that it can be understood
 without reading the code. It describes the code on `main` and the database as loaded on

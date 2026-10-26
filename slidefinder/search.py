@@ -14,7 +14,9 @@ from . import db, embed
 WEAK_DISTANCE = 0.55
 TOP_SLIDES = 30
 MAX_SLIDES = 100
-KIND_BONUS = 0.15  # score boost when more than one kind of item matched the same slide
+# Score boost when more than one kind of item matched the same slide. Started at 0.15; eval/run.py on
+# 28 labeled questions (Oct 26) showed it hurt (hit@1 0.57 vs 0.68, MRR 0.72 vs 0.78), so it is off.
+KIND_BONUS = 0.0
 
 
 def search(question: str, course: str | None = None, mode: str = "hybrid", n: int = TOP_SLIDES) -> dict:

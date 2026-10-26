@@ -39,16 +39,8 @@
 <dialog id="slide">
   <div class="slide-view">
     <button class="close" data-close>×</button>
-    <div class="slide-img"><img id="slide-img" alt=""></div>
-    <div class="slide-meta">
-      <h2 id="slide-title"></h2>
-      <p id="slide-where" class="where"></p>
-      <div class="actions">
-        <button id="pick-btn">Pick for new deck</button>
-        <a id="open-img" target="_blank" rel="noopener" class="ghost btn">Open image</a>
-      </div>
-      <h3>What I said</h3>
-      <div id="said"></div>
+    <div class="slide-left">
+      <img id="slide-img" alt="">
       <h3>What is indexed for this slide</h3>
       <p class="hint">The exact text that was embedded. Each block is one searchable item.</p>
       <div id="items"></div>
@@ -58,6 +50,16 @@
         <textarea id="note-text" rows="2" placeholder="Add a note: “used this in the Deloitte workshop”, “good opener for AWS”" maxlength="2000"></textarea>
         <button>Add note</button>
       </form>
+    </div>
+    <div class="slide-meta">
+      <h2 id="slide-title"></h2>
+      <p id="slide-where" class="where"></p>
+      <div class="actions">
+        <button id="pick-btn">Pick for new deck</button>
+        <a id="open-img" target="_blank" rel="noopener" class="ghost btn">Open image</a>
+      </div>
+      <h3>What I said</h3>
+      <div id="said"></div>
     </div>
   </div>
 </dialog>

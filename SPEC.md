@@ -5,7 +5,7 @@ Course: CMU 15-114 HW6, Build a Vector Database App.
 
 ## 1. What it is
 
-A command-line tool for finding my own teaching material by meaning. I type a question like
+A web app for finding my own teaching material by meaning. I type a question like
 "how do we do segmentation" or "how do I use a random forest", and it returns the slides where I
 taught that, ranked, with what I said while each slide was on screen. Later, when I'm building a new
 deck, I can search "sprints and team design" or "working with AWS" across every course I've taught
@@ -71,13 +71,13 @@ This is a second use of the vector database: near-duplicate detection across ter
 
 ### What I said about a slide, term by term
 
-For any slide, I can see the words I actually said over it each time I taught it, newest first.
+Open any slide and the slide view shows the words I actually said over it each time I taught it, newest first.
 The default is the last 4 terms.
 
 Example of the layout (the times and quotes below are placeholders, not real output):
 
 ```
-> history 2
+[slide view, result 2]
 Generalization and Overfitting: The Bias-Variance Tradeoff
 45-851 Data Mining · used in 5 terms · I have recordings for 3
 
@@ -113,7 +113,7 @@ How the words get attached to a slide, per recorded session:
    clicking past them).
 4. **Store it twice.**
    - `build/occurrences.jsonl` has one row per (slide, term, session): page number, time
-     windows, method, confidence and full text. `history` reads this file.
+     windows, method, confidence and full text. The slide view reads it.
    - `said` items in Chroma (~120-word chunks with `term` and `occurrence_id` metadata) make the
      words searchable, so a query can match how I said it in 2023 even if the slide text never
      changed.
@@ -150,7 +150,7 @@ This dataset is from one term only, so phase 1 builds the per-slide transcript v
 
 **Phase 2 (right after, starting with Data Mining): the raw archive.** Decks, transcripts and
 video from every term, using the pipeline below. This is what makes "history across terms" real.
-The loader writes the same record shape as phase 1, so search, `history` and the CLI don't change.
+The loader writes the same record shape as phase 1, so search, history and the page don't change.
 
 ### Raw archive (phase 2)
 
@@ -203,10 +203,9 @@ Data Mining terms with no decks yet (Fall 2026) are skipped.
 - No student names, faces, or voices in the index, the README, or the video.
 - Guest-speaker sessions (`_build/guest_sessions.json`) and the Tesla vs Waymo case are skipped.
 
-**For graders:** the tool never requires my archive. `slides add <any.pdf>` works on any deck.
-The README will name a public sample (to pick: a few of my own decks that contain no student
-material, published as a release download, or an openly licensed course deck set) and give the
-two commands to load it.
+**For graders:** the app never requires my archive. In local mode (Chroma, no keys) they can load
+a public sample (to pick: a few of my own decks with no student material, as a release download)
+and add any PDF deck through the page.
 
 ## 5. What it does with the results
 
@@ -215,29 +214,30 @@ Printing the top three raw would earn a B. The app does this instead:
 1. **Merge per slide.** A slide's score combines its best `card`, `said`, and `note` hits
    (best hit, plus a small bonus when more than one kind matched). Return the top slides, not
    the top chunks.
-2. **Group and explain.** Show results grouped by deck: course, term, session, slide number, a
-   one-line "why it matched" (the item that matched best, quoted briefly), and the terms it was
-   used in.
-3. **Say when nothing fits.** If the best distance is past a cutoff picked from real numbers in
-   Step 5, the app says "I don't think I taught this" and shows the closest one anyway, marked as weak.
-4. **Open it.** `open 3` opens result 3's slide image (or the deck at that page).
-5. **Collect for a new deck.** `pick 1 3 4` adds slides to a working set. `export new-deck.pdf`
-   writes those pages, in order, into one PDF I can start a new deck from. The set survives
-   restarts.
+2. **Group and explain.** Results come back as slide thumbnails grouped by deck, each showing
+   course, term, session and slide number, a one-line "why it matched" (the item that matched
+   best, quoted briefly), and the terms it was used in.
+3. **Say when nothing fits.** If the best score is past a cutoff picked from real numbers in
+   Step 5, the page says "I don't think I taught this" and shows the closest few anyway,
+   marked as weak.
+4. **Open it.** Clicking a slide opens it full size, with what I said over it (`history`):
+   one block per term, newest first.
+5. **Collect for a new deck.** "Pick" adds slides to a working set kept in the database, so it
+   follows me between computers. "Export" downloads those slides, in order, as one PDF I can
+   start a new deck from.
 6. (Stretch) **Short answer.** One LLM call writes two or three sentences on how I taught this,
    using only the retrieved slides and transcript text, with slide references.
 
 ## 6. Adding items at runtime
 
-| Command | What happens | Searchable |
+| From | What happens | Searchable |
 | --- | --- | --- |
-| `add deck <path.pdf\|.pptx> [--course X --term Y]` | Renders, extracts text, writes descriptions, merges duplicates, indexes | immediately |
-| `add note <result#\|slide_id> "text"` | Stores a `note` item on that slide | immediately |
-| `add transcript <file> --deck <deck>` | Chunks the transcript and matches the chunks to slides | immediately |
+| Web: "Add deck" (a PDF) | The browser renders each page with pdf.js and pulls its text, then uploads the images straight to storage through signed upload links (this avoids Vercel's 4.5 MB request limit). The server embeds the text and inserts the rows. | immediately |
+| Web: "Add note" on any slide | Stores a `note` item on that slide ("used this in the Deloitte workshop") | immediately |
+| CLI: `slides load` | Bulk loads (phase 1 data, later the raw archive), including pptx speaker notes and transcripts | when it finishes |
 
-IDs are deterministic (`<content_hash>-<kind>-<n>`), and writes use `upsert`. Re-adding the same
-deck updates it instead of silently skipping or duplicating it. (`add` with an existing ID is
-ignored without any error.)
+IDs are deterministic (`<slide_id>-<kind>-<n>`), and writes are upserts. Re-adding the same deck
+updates it instead of silently skipping or duplicating it.
 
 ## 7. Retrieval: getting it right, and proving it
 
@@ -248,9 +248,9 @@ assumed:
 | --- | --- | --- |
 | Picture-heavy slides had almost no text to embed | `card` text includes a written description of the image | Score with and without descriptions |
 | One vector per slide mixed slide text and transcript | Separate `card` / `said` items, merged per slide | Score card-only vs said-only vs both |
-| Long text cut off at the model limit | Chunks under 256 word pieces; length check in the indexer | Count the items that were truncated (should be 0) |
-| Embedding model choice | Compare Chroma's default (all-MiniLM-L6-v2) with `BAAI/bge-small-en-v1.5`, plus Voyage if time allows | Same eval set, each model in its own collection |
-| Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Optional keyword pass fused with the vector ranks (reciprocal rank fusion) | Score with and without |
+| Text cut off at the model limit | Voyage reads 32,000 tokens; the local Chroma model reads 256 word pieces, so chunks stay under 256 either way | Count the items that were truncated (should be 0) |
+| Embedding model choice | Voyage `voyage-3.5` (web) vs Chroma's default all-MiniLM-L6-v2 (local) | Same eval set on both backends |
+| Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Hybrid search: Postgres full-text rank fused with the vector rank (reciprocal rank fusion) in one SQL function | Score vector-only vs hybrid |
 
 **Eval set (phase 1):** Faculty Twin's labeled course questions: 28 with their correct slides
 (`expected_slides`) and 6 off-topic ones that should come back "not taught". They're read from
@@ -258,18 +258,15 @@ assumed:
 aggregate scores go in the README. This also gives a direct before/after against Faculty Twin's
 retrieval on the same questions.
 
-**Eval set (phase 2):** about 15 more of my own questions for Data Mining, labeled with the `judge`
-command. It shows the top 10 for a question and lets me mark the good ones by number.
+**Eval set (phase 2):** about 15 more of my own questions for Data Mining, labeled on a small
+judge page that shows the top 10 and lets me tick the good ones.
 
 **Metrics:** hit@5 (a good slide in the top 5), recall@10, and MRR. `slides eval` prints one row per
 configuration, and the winning configuration becomes the default. The table goes in the README.
 
-Distance: Chroma defaults to squared L2. Collections here are created with cosine distance
-(`configuration={"hnsw": {"space": "cosine"}}`), so 0 means identical and the cutoff in
-section 5 reads as 1 minus cosine similarity.
-
-Two collections can't share embeddings from different models, so each configuration is its own
-collection (`slides__minilm`, `slides__bge`, ...).
+Similarity is cosine everywhere. In pgvector that is the `<=>` operator, which returns cosine
+distance (0 = identical). The local Chroma collection is created with
+`configuration={"hnsw": {"space": "cosine"}}` so the numbers read the same way.
 
 ## 8. Slide descriptions
 
@@ -284,27 +281,60 @@ costs nothing.
 - Transcript text sent to the model must already be de-identified.
 - Without a key, `card` falls back to slide text + notes, so graders can run without one.
 
-## 9. Stack
+## 9. Stack and hosting
 
-- Python 3.11+, `chromadb` (1.5.x, `PersistentClient(path="chroma_store")`). No `Settings(...)`
-  client and no `.persist()`: both are from old versions.
-- PyMuPDF for rendering and text, python-pptx for notes, LibreOffice for pptx-only decks.
-- `sentence-transformers` for the bge comparison. Models download on first run.
-- `anthropic` for descriptions (optional).
-- CLI: a menu loop (`python -m slidefinder`) plus one-shot subcommands
-  (`slides ask "..."`) so it can be scripted and timed.
+It runs on the web, so I can use it from any computer. The same app also runs on one machine
+with no accounts or keys, for grading.
+
+| Part | Web (my copy) | Local (graders) |
+| --- | --- | --- |
+| Page | Static HTML/CSS/JS on Vercel | Same files, served by the app |
+| API | FastAPI as a Vercel Python function | Same app, `uvicorn` on localhost |
+| Vector database | Supabase Postgres + pgvector (the Faculty Twin project; tables prefixed `sf_`) | Chroma `PersistentClient(path="chroma_store")` |
+| Embeddings | Voyage `voyage-3.5`, 1024 dims, stored as `halfvec` | Chroma's built-in all-MiniLM-L6-v2 (downloads once, about 80 MB) |
+| Slide images | Private Supabase Storage bucket `slide-finder`, short-lived signed links | Local folder |
+| Access | One passcode (env var), remembered in an HttpOnly cookie | none |
+
+Only `store.py` differs between the two (`STORE=supabase` or `STORE=chroma`). Search, merging,
+history and the page are shared.
+
+**Database (Supabase):**
 
 ```
+sf_slides       slide_id pk, course, course_name, term, session, session_title, slide_number,
+                title, text, notes, description, image_path, thumb_path, used_in jsonb
+sf_items        id pk, slide_id fk, kind ('card'|'said'|'note'), term, occurrence_id, text,
+                embedding halfvec(1024), fts tsvector (generated), created_at
+                index: hnsw (embedding halfvec_cosine_ops), gin (fts)
+sf_occurrences  id pk, slide_id fk, term, session, windows jsonb, method, confidence, transcript
+sf_picks        position, slide_id fk
+sf_search(query_embedding, query_text, k)   SQL function: top 50 by vector + top 50 by full
+                text, fused by reciprocal rank, returns items with both scores
+```
+
+RLS is on with no public policies. Only the server's key can read or write.
+
+**Size for all of my content** (five courses, every term): about 3,000 unique slides and up to
+15,000 transcript chunks, so under 20,000 rows and about 100 MB with the index. Images are about
+350 MB full size plus 45 MB of thumbnails. That fits the free tier. Check the project's current
+usage in the dashboard before phase 2.
+
+**Libraries:** `fastapi`, `httpx` (Supabase REST and Voyage, no heavy SDKs in the function),
+`chromadb` and PyMuPDF for local mode and loading only, `anthropic` for descriptions, pdf.js and
+jsPDF in the browser (cdnjs).
+
+```
+api/index.py         # Vercel entry: the FastAPI app
 slidefinder/
-  ingest.py     # archive walk, render, text + notes, dedup
-  describe.py   # vision descriptions + cache
-  chunk.py      # transcript chunks, slide matching
-  store.py      # Chroma collections, add/upsert, query
-  search.py     # merge per slide, cutoff, grouping
-  collect.py    # pick / export PDF
-  cli.py
-eval/
-  questions.jsonl, run.py
+  app.py             # routes: /api/search, /api/slide/<id>, /api/notes, /api/decks, /api/picks
+  store.py           # SupabaseStore | ChromaStore, same methods
+  embed.py           # Voyage (web) / Chroma default (local)
+  search.py          # merge per slide, cutoff, grouping
+  load.py            # phase 1 loader (CLI), later the raw archive
+  describe.py        # vision descriptions + cache
+public/              # index.html, app.js, app.css
+supabase/migrations/ # schema + sf_search
+eval/run.py
 ```
 
 ## 10. Build order (mapped to the HW steps)
@@ -314,31 +344,34 @@ Built one step at a time, checking each one before the next. The times are budge
 | # | Step | Done when | Budget |
 | --- | --- | --- | --- |
 | 1 | Idea, data, two queries | This spec | done |
-| 2 | Install Chroma, five-line check | Imports, creates a collection | 15 min |
-| 3 | Persistent smoke test | 15 hand-typed slide cards survive a restart | 15 min |
-| 4 | Load phase 1 (Faculty Twin build: 978 slides, 739 with transcript) as `card` + `said` items | Counts match, timing for 50 printed, 0 truncated items | 30 min |
-| 5 | Query and look at the distances | Both test queries checked; on-topic and off-topic distance ranges written down | 25 min |
-| 6 | Runtime add: `add deck`, `add note` | Added item shows up in the very next search | 20 min |
-| 7 | Do something: merge per slide, group, cutoff, open, pick, export | A new PDF comes out of three picks | 45 min |
-| 8 | Descriptions for the 978 slides (background run, texts me when done) and the `history` command on phase 1 | Every slide has a description; `history` shows what I said | 30 min |
-| 9 | Eval on the 28 + 6 questions, compare configs, Faculty Twin as baseline | Table of hit@5 / MRR per configuration | 40 min |
-| 12 | Phase 2: Data Mining raw decks, near-duplicate grouping, instructor lines, video alignment, text fallback, then the other courses | `history` shows 3 Data Mining terms for the overfitting slide; spot-check written down | after submission, or tonight if time allows |
+| 2 | Install Chroma, five-line check | Imports, creates a collection | done |
+| 3 | Persistent smoke test | 15 hand-typed slide cards survive a restart | done |
+| 4a | Supabase schema + bucket; load phase 1 into it (978 slides, 739 with transcript) | Row counts match; timing for 50 printed | 40 min |
+| 4b | Same loader into local Chroma | Same counts locally | 10 min |
+| 5 | Query and look at the scores | Both test queries checked; on-topic and off-topic ranges written down | 20 min |
+| 6 | API + page: search, results grid, slide view with what I said | Search works on localhost against Supabase | 50 min |
+| 7 | Add note, add deck (pdf.js upload), pick + export PDF | A new note is found by the next search; a 3-slide PDF downloads | 45 min |
+| 8 | Deploy to Vercel with passcode; descriptions run in the background (texts me when done) | Works at the public URL from my phone | 30 min |
+| 9 | Eval on the 28 + 6 questions: Voyage vs MiniLM, vector vs hybrid, with and without descriptions | Table of hit@5 / MRR | 30 min |
 | 10 | README (first four sections in my own words), prompt log | Two separate files | 30 min |
 | 11 | Video, push, portfolio, form | Link works in an incognito window | 30 min |
+| 12 | Phase 2: Data Mining raw decks, near-duplicate grouping, video alignment, then the other courses | History shows 3 Data Mining terms for the overfitting slide | after submission |
 
-Cut line if time runs short: drop Voyage, keyword fusion, the LLM answer, `compare`, and the
-text-matching fallback (history then covers sessions with video only). Steps 1 through 7, step 10 and step 11 are the graded core.
+Cut line if time runs short: drop the LLM answer, `compare`, the "add deck" upload (keep "add
+note" as the runtime add), and descriptions. Steps 4 through 7, 10 and 11 are the graded core.
 
-## 11. Open decisions
+## 11. Decisions
 
-| Decision | Recommendation |
+| Decision | Choice |
 | --- | --- |
 | Faculty Twin was turned in for 15-113. The HW says new standalone project. | **Decided:** phase 1 uses Faculty Twin's processed slides and alignments as **input data only**. All code is new, nothing is imported, and the README says plainly where the data came from. |
-| Public sample for graders | Two or three of my own decks with no student material, as a release download |
-| API key for descriptions | Anthropic key in this repo's `.env`, or the course's OpenAI credits |
+| Vector database | **Decided:** Supabase pgvector for the web, Chroma locally for graders |
+| Hosting | **Decided:** web on Vercel, built now |
+| Access | Passcode |
+| Keys | This repo's `.env` and the new Vercel project need `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `VOYAGE_API_KEY`, `ANTHROPIC_API_KEY` (descriptions), `SF_PASSCODE`. The first four already exist in faculty-twin's `.env`. |
+| Graders | They run local mode (no keys). The form also gets the web link and a passcode. |
 | Repo visibility | Private until submission, then public (or add the TAs) |
 
 ## 12. Not in this version
 
-A web UI or cloud hosting (planned next: Chroma Cloud plus a small web page), Faculty Twin
-integration, editing or deleting slides, and video clips.
+Faculty Twin integration, editing or deleting slides, and video clips.

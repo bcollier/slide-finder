@@ -58,10 +58,71 @@ Metadata on every item: `slide_id`, `kind`, `course` ("45-851"), `course_name`, 
 
 ### Repeated slides
 
-The same slide shows up in many terms (Data Mining has seven). Before indexing, slides are
-grouped by a hash of their normalized text plus a small image hash. One copy is indexed, and its
-metadata lists every term that used it (`used_in`). Otherwise the top 10 would be the same
-k-means slide seven times.
+The same slide shows up in many terms (Data Mining has six with decks). One copy is indexed,
+and every term that used it is kept as an **occurrence**. Otherwise the top 10 would be the same
+k-means slide six times.
+
+Exact hashes are too strict, because a slide that changed one word or the year between terms
+should still count as the same slide. Two slides are the same when both are true:
+- their card text embeddings are near-duplicates (cosine similarity ≥ 0.95, tuned in Step 5 by looking at pairs), and
+- their images are close (difference hash, Hamming distance ≤ 10 of 64 bits).
+
+This is a second use of the vector database: near-duplicate detection across terms.
+
+### What I said about a slide, term by term
+
+For any slide, I can see the words I actually said over it each time I taught it, newest first.
+The default is the last 4 terms.
+
+Example of the layout (the times and quotes below are placeholders, not real output):
+
+```
+> history 2
+Generalization and Overfitting: The Bias-Variance Tradeoff
+45-851 Data Mining · used in 5 terms · I have recordings for 3
+
+2025 Fall (M2) · s04 Classification · 00:41:10–00:43:55 (2m45s) · matched by video
+  "So here's the thing that gets everybody. Your model can look perfect on the data
+   you trained it on, and then you hand it something new and it falls apart..."
+
+2024 Spring (M4) · s15 Overview of classification · 00:18:02–00:19:30 · matched by video
+  "..."
+
+2023 Fall (AB2) · s03 Classification II · 00:52:44–00:55:10 · matched by text (lower confidence)
+  "..."
+
+2025 Spring (M4), 2024 Fall (AB2): used this slide, no transcript yet
+```
+
+How the words get attached to a slide, per recorded session:
+
+1. **Load my lines only.** Read the de-identified timed transcript (`*.cleaned.timed.jsonl` /
+   `transcript_clean.timed.jsonl`), keep cues with `speaker == "instructor"`, and drop `student`
+   and `unclear`. Raw `.vtt` files are never read.
+2. **Find when each slide was on screen.**
+   - *By video (preferred):* take a frame every 2 seconds at low resolution with ffmpeg and
+     compare it with that session's slide images (difference hash, plus a small grayscale
+     correlation to break ties). Smooth the sequence so a single odd frame can't flip the
+     slide, and allow going back to an earlier slide. The output is time windows per slide.
+   - *By text (fallback when there is no video, or the video match is weak):* split the transcript
+     into 30-second windows and embed them. Pick the best in-order assignment of windows to
+     slides, by similarity to each slide's card, with a penalty for jumping around. Results are
+     labeled lower confidence.
+3. **Cut the words into windows.** Instructor cues that fall inside a slide's on-screen windows
+   become that occurrence's transcript. Slides shown for less than 8 seconds get no text (I was
+   clicking past them).
+4. **Store it twice.**
+   - `build/occurrences.jsonl` has one row per (slide, term, session): page number, time
+     windows, method, confidence and full text. `history` reads this file.
+   - `said` items in Chroma (~120-word chunks with `term` and `occurrence_id` metadata) make the
+     words searchable, so a query can match how I said it in 2023 even if the slide text never
+     changed.
+
+Spot-check before trusting it: for 3 sessions, open the recording at 5 random windows and
+confirm the slide on screen. Write the hit rate in the README.
+
+Stretch: **`compare 2`**, one LLM call that reads the term-by-term text and says in three bullets
+how my explanation changed: new examples, things I stopped saying, and how long I spent on it.
 
 ## 4. Data
 
@@ -73,8 +134,23 @@ across terms.
 | --- | --- | --- |
 | `slides.pdf` | Slide images (rendered with PyMuPDF) and page text | Preferred when present |
 | `slides.pptx` | Speaker notes, and the source when no PDF exists (converted with LibreOffice) | |
-| Transcripts that are mine only (`*.cleaned.md` recorded scripts) or already de-identified (`transcripts-clean`, with timings) | `said` items | Never raw live-session transcripts: they contain student names and voices |
-| Slide/time alignment for the 17 sessions that have one | Which words go with which slide | For other sessions, words are matched to slides by text similarity (stretch) |
+| De-identified timed transcripts (`*timed.jsonl`), instructor lines only | `said` items and `history` | Never raw `.vtt`: those have student names and voices |
+| Session video (`video.mp4`) | When each slide was on screen | Frames only; nothing from the video is stored except slide time windows |
+| My recorded scripts (`*.cleaned.md`, no timestamps) | `said` items, matched by text | Async module videos |
+
+Coverage for "what I said" (sessions that have both a deck and a timed transcript):
+
+| Course | Terms with transcripts | Sessions |
+| --- | --- | --- |
+| 45-851 Data Mining | 2023 Fall (11), 2024 Spring (5), 2025 Fall M2 (1) | 17 |
+| 45-884 AI Methods | 2025 Fall (5), 2026 Summer (6), 2026 Fall (7) | 18 |
+| 70-445 AI for Business Leaders | 2026 Fall (10) | 10 |
+| 45-885 Data Visualization | 2024 Spring, 2026 Spring | 2 |
+| 46-887 ML for Business Applications | 2026 Spring | 1 |
+
+Later: Data Mining 2024 Fall (12 videos) and 2025 Spring (16 videos) have recordings but no
+transcript. Transcribing them locally (Whisper) and de-identifying them would give Data Mining
+five terms of history. That is not in this version.
 
 **Scope for this version: the five core courses I teach now, every term in the archive.**
 Older and occasional courses (Probability and Statistics, Data Exploration and Visualization,
@@ -212,13 +288,14 @@ Built one step at a time, checking each one before the next. The times are budge
 | 5 | Query and look at the distances | Both test queries checked; on-topic and off-topic distance ranges written down | 25 min |
 | 6 | Runtime add: `add deck`, `add note` | Added item shows up in the very next search | 20 min |
 | 7 | Do something: merge per slide, group, cutoff, open, pick, export | A new PDF comes out of three picks | 45 min |
-| 8 | Descriptions + `said` items for the five courses | Background run, texts me when done | 40 min |
+| 8 | Descriptions for the five courses (background run, texts me when done) | Every unique slide has a description | 20 min |
+| 8b | Slide history: instructor lines, video alignment, text fallback, `said` items, `history` command | `history` shows 3 Data Mining terms for the overfitting slide; spot-check written down | 60 min |
 | 9 | Eval: label 30 questions, compare configs | Table of hit@5 / MRR per configuration | 40 min |
 | 10 | README (first four sections in my own words), prompt log | Two separate files | 30 min |
 | 11 | Video, push, portfolio, form | Link works in an incognito window | 30 min |
 
-Cut line if time runs short: drop Voyage, keyword fusion, the LLM answer, and text matching for
-sessions without an alignment. Steps 1 through 7, step 10 and step 11 are the graded core.
+Cut line if time runs short: drop Voyage, keyword fusion, the LLM answer, `compare`, and the
+text-matching fallback (history then covers sessions with video only). Steps 1 through 7, step 10 and step 11 are the graded core.
 
 ## 11. Open decisions
 

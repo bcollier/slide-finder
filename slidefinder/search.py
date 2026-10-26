@@ -71,7 +71,9 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
             continue
         results.append({**s, "slide": {k: r[k] for k in (
             "slide_id", "course", "course_name", "term", "session", "session_title", "slide_number",
-            "title", "used_in")}, "thumb": thumbs.get(r.get("thumb_path") or "")})
+            "title", "text", "used_in")}, "thumb": thumbs.get(r.get("thumb_path") or "")})
+
+    results = stack_versions(results)
 
     best = min((s["distance"] for s in ranked if s["distance"] is not None), default=None)
     return {
@@ -79,6 +81,46 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
         "weak": best is None or best > WEAK_DISTANCE, "best_distance": best,
         "results": results,
     }
+
+
+def family_key(text: str) -> str | None:
+    """Slides with the same text (5+ words) are versions of one slide, whatever course or term."""
+    words = (text or "").lower().split()
+    return " ".join(words) if len(words) >= 5 else None
+
+
+def term_order(term: str) -> tuple:
+    """"2025 Fall (M2)" sorts after "2025 Spring (A3)": newest term first when reversed."""
+    parts = (term or "").split()
+    year = int(parts[0]) if parts and parts[0].isdigit() else 0
+    season = {"spring": 1, "summer": 2, "fall": 3}.get(parts[1].lower(), 0) if len(parts) > 1 else 0
+    return (year, season, term)
+
+
+def stack_versions(results: list[dict]) -> list[dict]:
+    """Group versions of the same slide from different courses or terms into one result, in the
+    slot of the best-ranked version. Two copies from the same course and term are kept apart:
+    those are different slides that happen to share a caption (build-up steps, for example)."""
+    stacks: list[dict] = []
+    for r in results:
+        key = family_key(r["slide"].get("text"))
+        home = None
+        if key:
+            for st in stacks:
+                if st["key"] == key and all((v["slide"]["course"], v["slide"]["term"]) !=
+                                            (r["slide"]["course"], r["slide"]["term"]) for v in st["versions"]):
+                    home = st
+                    break
+        if home:
+            home["versions"].append(r)
+        else:
+            stacks.append({"key": key, "versions": [r]})
+    out = []
+    for st in stacks:
+        vs = sorted(st["versions"], key=lambda v: term_order(v["slide"]["term"]), reverse=True)
+        top = st["versions"][0]  # best ranked keeps the slot and the scores shown first
+        out.append({**top, "versions": vs})
+    return out
 
 
 def slide_detail(slide_id: str) -> dict | None:

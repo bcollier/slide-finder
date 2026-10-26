@@ -204,6 +204,18 @@ regrouped and reloaded.
 
 The GitHub description was stale from Step 2 (Chroma); corrected.
 
+> still a problem, I am fine with them being returned, but there should be some smart logic to
+> say these top three slides are from the same course. put the cards on top of each other at
+> the number one spot, and clearly label their difference sections as Fall 2026, Fall 2025, etc
+
+The same slide also lives in three courses (AI for Business Leaders, Data Mining, Data
+Visualization), and the index keeps one copy per course on purpose, so that what I said in each
+course stays with that course. The fix is at search time: results whose slide text is identical
+(five or more words) from different courses or terms are stacked into one slot, shown as a
+stacked card with a tab per version ("Fall 2026 · AI for Business Leaders"), and clicking a tab
+swaps in that version's scores and match. Two copies from the same course and term never stack
+(those are different slides sharing a caption).
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

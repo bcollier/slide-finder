@@ -48,26 +48,43 @@ function render(d) {
     ? `<span class="weak">I don't think I taught this. The closest slides are below, but treat them as weak matches` +
       (d.best_distance != null ? ` (best distance ${d.best_distance.toFixed(2)}).` : '.') + `</span>`
     : `${n} slide${n === 1 ? '' : 's'}` + (d.best_distance != null ? ` · best distance ${d.best_distance.toFixed(2)}` : '');
+  stacks = d.results;
   results.innerHTML = d.results.map((r, i) => {
-    const s = r.slide, w = r.why || {};
-    const whyLabel = { card: 'Slide says', said: 'I said', note: 'My note', desc: 'Image shows' }[w.kind] || '';
-    return `<article class="hit" data-id="${esc(s.slide_id)}">
-      ${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
+    const vs = r.versions || [r];
+    return `<article class="hit${vs.length > 1 ? ' stack' : ''}" data-i="${i}" data-id="${esc(r.slide.slide_id)}">${cardInner(r, i, 0)}</article>`;
+  }).join('') || '<p class="empty">Nothing stored yet.</p>';
+}
+let stacks = [];
+const termLabel = t => { const m = /^(\d{4})\s+(\w+)\s*(.*)$/.exec(t || ''); return m ? `${m[2]} ${m[1]}${m[3] ? ' ' + m[3] : ''}` : (t || ''); };
+function cardInner(stackTop, i, k) {
+  const vs = stackTop.versions || [stackTop], r = vs[k], s = r.slide, w = r.why || {};
+  const whyLabel = { card: 'Slide says', said: 'I said', note: 'My note', desc: 'Image shows' }[w.kind] || '';
+  const tabs = vs.length > 1 ? `<div class="vers" title="Versions of this slide: same text, different course or term">${vs.map((v, j) =>
+      `<button class="ver${j === k ? ' on' : ''}" data-k="${j}">${esc(termLabel(v.slide.term))} · ${esc(v.slide.course_name)}</button>`).join('')}</div>` : '';
+  return `${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
       <div class="body">
-        <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}</div>
+        <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}${vs.length > 1 ? ` <small class="nver">${vs.length} versions</small>` : ''}</div>
+        ${tabs}
         <div class="where">${esc(where(s))}${s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : ''}</div>
         <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${{ said: 'what I said', desc: 'image' }[k] || k}</span>`).join('')}</div>
         <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
-          <span>score <b>${r.score.toFixed(4)}</b>${r.score !== r.raw_score ? ` <small>(${r.raw_score.toFixed(4)} +${Math.round(d.kind_bonus * 100)}%)</small>` : ''}</span>
+          <span>score <b>${r.score.toFixed(4)}</b></span>
           <span>distance <b>${r.distance == null ? '–' : r.distance.toFixed(3)}</b></span>
           <span>meaning <b>${r.vec_rank == null ? '–' : '#' + r.vec_rank}</b></span>
           <span>keyword <b>${r.fts_rank == null ? '–' : '#' + r.fts_rank}</b></span>
           <span>${r.items} item${r.items === 1 ? '' : 's'} hit</span>
         </div>
         <div class="why"><b>${whyLabel}:</b> ${esc(w.text || '').replace(/^\[[^\]]*\]\s*/, '')}</div>
-      </div></article>`;
-  }).join('') || '<p class="empty">Nothing stored yet.</p>';
+      </div>`;
 }
+results.addEventListener('click', e => {
+  const v = e.target.closest('.ver');
+  if (!v) return;
+  e.stopPropagation();
+  const h = v.closest('.hit'), i = +h.dataset.i, k = +v.dataset.k;
+  h.innerHTML = cardInner(stacks[i], i, k);
+  h.dataset.id = stacks[i].versions[k].slide.slide_id;
+}, true);
 results.addEventListener('click', e => { const h = e.target.closest('.hit'); if (h) openSlide(h.dataset.id); });
 
 // ---- slide view ------------------------------------------------------------

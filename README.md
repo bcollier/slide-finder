@@ -103,6 +103,13 @@ Each result shows:
   keyword);
 - a "why" line quoting the best item, labeled "Slide says", "Image shows", "I said" or "My note".
 
+The same slide often lives in more than one course (my customer segmentation slide is in three),
+and each course keeps its own copy so that what I said in that course stays with it. In the
+results those copies are stacked into one slot, as a stacked card with a tab per version ("Fall
+2026 · AI for Business Leaders", "Fall 2025 · Data Mining"); clicking a tab shows that version's
+match and scores. Two copies from the same course and term never stack: those are different
+slides that share a caption, such as the steps of a build-up.
+
 The page has a course filter, a search mode (meaning + keywords, meaning only, keywords only),
 and a slider for 5 to 100 results.
 

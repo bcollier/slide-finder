@@ -114,7 +114,9 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 .gauge .lbl.best { top: 40px; color: #2e7d4f; }
 #why { display: grid; gap: 6px; margin: 4px 0 14px; } #why h3 { margin-bottom: 0; } .evidence { margin-top: 4px; }
 .ledger { display: grid; gap: 4px; margin-top: 6px; }
-.ev { display: grid; grid-template-columns: 78px 1fr 40px; gap: 6px; align-items: center; font-size: 12px; }
+.ev { display: grid; grid-template-columns: 96px 1fr 40px; gap: 6px; align-items: center; font-size: 12px; }
+.ev .kind { text-align: center; line-height: 1.25; }
+.ev .kind small { font-weight: 400; text-transform: none; letter-spacing: 0; }
 .ev .ranks { grid-column: 2 / 4; font-size: 11px; color: var(--muted); margin-top: -3px; }
 .bar { height: 9px; background: var(--line); border-radius: 5px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); border-radius: 5px; }

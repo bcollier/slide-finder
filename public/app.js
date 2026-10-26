@@ -121,10 +121,12 @@ function evidence(r, s) {
   // A. evidence ledger
   const rows = items.map(x => {
     const dist = x.distance, w = dist == null ? 0 : Math.round(closeness(dist) * 100);
-    const ranks = [x.vec_rank != null ? `meaning #${x.vec_rank}` : '', x.fts_rank != null ? `keyword #${x.fts_rank}` : ''].filter(Boolean).join(' · ');
-    return `<div class="ev"><span class="kind ${x.kind}">${KIND[x.kind]}</span><div class="bar${dist != null && dist > weak ? ' weakish' : ''}"><i style="width:${w}%"></i></div><span class="num">${dist == null ? '–' : dist.toFixed(2)}</span><span class="ranks">${ranks}</span></div>`;
+    const ranks = [x.vec_rank != null ? `${ordinal(x.vec_rank)} closest item in the index by meaning` : '', x.fts_rank != null ? `keyword rank #${x.fts_rank}` : ''].filter(Boolean).join(' · ');
+    const part = x.kind === 'said' ? (/-said-(?:[a-z0-9]+-)?(\d+)$/.exec(x.id) || [])[1] : null;
+    const label = x.kind === 'said' ? `narration${part != null ? ` part ${+part + 1}` : ''}<br><small>${esc(termLabel(x.term))}</small>` : KIND[x.kind];
+    return `<div class="ev"><span class="kind ${x.kind}">${label}</span><div class="bar${dist != null && dist > weak ? ' weakish' : ''}"><i style="width:${w}%"></i></div><span class="num">${dist == null ? '–' : dist.toFixed(2)}</span><span class="ranks">${ranks}</span></div>`;
   }).join('');
-  const missed = Object.keys(ev.misses).length ? `<div class="miss-line">Did not match: ${Object.entries(ev.misses).map(([k, n]) => `${n} ${KIND[k]}${n > 1 && k === 'said' ? ' chunks' : ''}`).join(', ')}</div>` : '';
+  const missed = Object.keys(ev.misses).length ? `<div class="miss-line">Did not match: ${Object.entries(ev.misses).map(([k, n]) => `${n} ${KIND[k]}${k === 'said' ? (n > 1 ? ' chunks' : ' chunk') : ''}`).join(', ')}. Narration is stored in ~120-word chunks, each matched on its own.</div>` : '<div class="miss-line">Every item of this slide matched. Narration is stored in ~120-word chunks, each matched on its own.</div>';
   const A = `<div class="ledger">${rows}</div>${missed}`;
   // B. heat text of the best item
   let B;

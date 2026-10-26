@@ -133,6 +133,15 @@ Prompts during this stretch:
   hash merged any two slides that shared a template ("Natural Language Processing" with "Quiz
   Access Code"). 317 pages collapsed to 206. Rewritten with separate rules for text-bearing and
   picture-only pages and a 256-bit hash; 261 unique slides, and the merged pairs are real repeats.
+- **Where to put the image description.** The first version appended the vision model's 80-word
+  description to each slide's card before embedding. "too many numbers on one screen, what should
+  I cut" then ranked "Tufte's Five Laws of Data-Ink" above "Identify and Eliminate Clutter", which
+  had been first. Long cards dilute the slide's own words. Descriptions became their own item kind
+  (`desc`), embedded separately; the slide takes whichever item is closest.
+- **PostgREST's 1000-row cap.** The course dropdown showed one course after Data Mining loaded:
+  Supabase caps a plain select at 1000 rows and `limit=` cannot raise it. Fixed with Range-header
+  pagination (`db.select_all`). The same cap would have silently skipped 169 Data Mining slides in
+  the describer.
 - **A persistent 1Password-style mistake of mine, not the AI's:** the generated passcode was 14
   characters and I kept typing 10. I set my own.
 

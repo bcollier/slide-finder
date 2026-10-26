@@ -20,7 +20,8 @@ what I said about them, across every term, when building a new deck.]
 [Where the data came from (my lecture archive; phase 1 used the slide images, text and
 de-identified transcript alignments I had already processed for Faculty Twin, as input data
 only). What one item is: a slide has several items, a "card" (deck, session, title, slide text,
-speaker notes), ~120-word chunks of what I said over it, and notes I add. How many: 3,171 unique
+speaker notes), a description of the image written by a vision model, ~120-word chunks of what I
+said over it, and notes I add. How many: 3,171 unique
 slides from 5,900 deck pages (five courses, every term since Fall 2023; 2,729 pages were repeats of a
 slide from another term), 4,733 searchable items. Metadata: course, term, session, slide number, which terms
 used the slide. Repeated slides across terms are grouped into one.]
@@ -111,8 +112,10 @@ own lines are indexed). Nothing from the archive, the database, or `.env` is com
 1. The question is embedded once (Voyage, `input_type=query`).
 2. `sf_search` returns the 50 closest items by cosine distance and the 50 best keyword matches
    (`websearch_to_tsquery`), each with a rank; the fused score is `1/(60+rank)` summed over both.
-3. Items are merged per slide: the slide takes its best item's score, a 15% bonus if more than
-   one kind of item (card, said, note) matched, and remembers which item matched best ("why").
+3. Items are merged per slide: the slide takes its best item's score and remembers which item
+   matched best ("why"). Item kinds: card, desc (image description), said, note. Keeping the
+   description as its own item mattered: folded into the card it diluted the slide's own words
+   and changed which slide ranked first.
 4. If the best cosine distance is above 0.55 the page says "I don't think I taught this" and shows
    the closest slides marked weak. The number comes from `eval/step5_distances.md`: on-topic best
    distances were 0.46 to 0.50, off-topic 0.58 to 0.60.

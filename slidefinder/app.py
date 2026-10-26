@@ -1,8 +1,10 @@
 """The web app: a static page plus a small JSON API. Runs on Vercel or with uvicorn.
 
-Routes (all behind the passcode cookie when SF_PASSCODE is set):
-    GET  /api/search?q=...&course=...&mode=hybrid|vector|keyword
-    GET  /api/slide/{slide_id}            slide, image, what I said per term, notes
+Routes (behind the passcode cookie when SF_PASSCODE is set and SF_OPEN is not):
+    GET  /api/me                          whether a passcode is needed and whether this browser has it
+    GET  /api/search?q=...&course=...&mode=hybrid|vector|keyword&n=30
+    GET  /api/slide/{slide_id}            slide, image, narration per term, items, notes, versions in other courses
+    GET  /api/courses                     course codes and names for the filter
     POST /api/notes {slide_id, text}      add a note; searchable immediately
     GET  /api/picks  POST /api/picks {slide_id}  DELETE /api/picks/{position}
     GET  /api/export.pdf                  picked slides as one PDF

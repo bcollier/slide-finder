@@ -32,10 +32,8 @@ def load() -> list[dict]:
     return rows
 
 
-def score(rows: list[dict], mode: str, bonus: bool = True, kinds: set | None = None) -> dict:
+def score(rows: list[dict], mode: str, kinds: set | None = None) -> dict:
     from slidefinder import search as S
-    saved = S.KIND_BONUS
-    S.KIND_BONUS = saved if bonus else 0.0
     hit1 = hit5 = rec10 = mrr = 0.0
     n_ans = 0
     off_ok = off_n = 0
@@ -59,8 +57,7 @@ def score(rows: list[dict], mode: str, bonus: bool = True, kinds: set | None = N
         elif r.get("type") == "off_topic":
             off_n += 1
             off_ok += d["weak"]
-    S.KIND_BONUS = saved
-    return {"mode": mode + ("" if bonus else " (no bonus)") + (" (no desc)" if kinds else ""), "n": n_ans, "hit@1": hit1 / n_ans, "hit@5": hit5 / n_ans,
+    return {"mode": mode + (" (no desc)" if kinds else ""), "n": n_ans, "hit@1": hit1 / n_ans, "hit@5": hit5 / n_ans,
             "recall@10": rec10 / n_ans, "MRR": mrr / n_ans, "off_topic_flagged": f"{off_ok}/{off_n}", "misses": misses}
 
 
@@ -72,9 +69,9 @@ def main() -> None:
     print(f"{sum(bool(r['expected']) for r in rows)} answerable questions, "
           f"{sum(r.get('type') == 'off_topic' for r in rows)} off-topic\n")
     print(f"{'mode':<20} {'hit@1':>6} {'hit@5':>6} {'rec@10':>7} {'MRR':>6}  off-topic flagged")
-    runs = [(m, True, None) for m in ([args.mode] if args.mode else MODES)] + ([("hybrid", True, {"card", "said", "note"})] if not args.mode else [])
-    for mode, bonus, kinds in runs:
-        s = score(rows, mode, bonus, kinds)
+    runs = [(m, None) for m in ([args.mode] if args.mode else MODES)] + ([("hybrid", {"card", "said", "note"})] if not args.mode else [])
+    for mode, kinds in runs:
+        s = score(rows, mode, kinds)
         print(f"{s['mode']:<20} {s['hit@1']:>6.2f} {s['hit@5']:>6.2f} {s['recall@10']:>7.2f} {s['MRR']:>6.2f}  {s['off_topic_flagged']}")
         if s["misses"]:
             print("   missed (not in top 10):", "; ".join(f"{q}" for _, q in s["misses"]))

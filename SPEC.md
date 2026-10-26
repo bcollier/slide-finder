@@ -79,7 +79,7 @@ one deck.
 
 This is a second use of the vector database: near-duplicate detection across terms.
 
-### What I said about a slide, term by term
+### What I said about a slide, term by term (labeled "Narration" on the page)
 
 Open any slide and the slide view shows the words I actually said over it each time I taught it, newest first.
 The default is the last 4 terms.
@@ -163,10 +163,11 @@ using the pipeline below. Loaded Oct 26, regrouped the same evening by embedded 
 "Repeated slides"): 45-851 (2,210 pages → 879 unique slides, 6 terms; 1,169 before regrouping),
 45-885 (2,154 → 725, 5 terms), 46-887 (317 → 255). Index total: 2,801 unique slides, 7,900 items (every slide has a vision-written description as its own `desc` item).
 Transcripts for these courses were attached Oct 26 by the **text fallback** (`align_text.py`):
-260 Data Mining occurrences from 14 sessions in two terms, 88 Data Visualization, 2 ML. The method:
+264 Data Mining occurrences (574 narration chunks) from 14 sessions in two terms, 88 Data
+Visualization (175 chunks), 2 ML (2 chunks). The method:
 instructor-only cues in 45-second windows, embedded and compared with each slide's card plus
 image description, double-centered (generic slides must not win every window), a soft time
-prior, then an in-order assignment that charges for jumps and for going back. Only 13 slides have
+prior, then an in-order assignment that charges for jumps and for going back. Only 23 slides have
 what-I-said from more than one term so far: the 2024 Spring live-session decks are short recaps
 that share few slides with the 2023 Fall lecture decks. More terms need the untranscribed
 recordings (Data Mining 2024 Fall, 2025 Spring). Video-frame alignment is still the next step.
@@ -230,17 +231,23 @@ and add any PDF deck through the page.
 
 Printing the top three raw would earn a B. The app does this instead:
 
-1. **Merge per slide.** A slide's score is its best `card`, `said`, or `note` hit. Return the top
-   slides, not the top chunks. (A bonus for slides matched by more than one kind was tried and
-   measured worse: hit@1 0.57 vs 0.68. It is off.)
-2. **Group and explain.** Results come back as slide thumbnails grouped by deck, each showing
-   course, term, session and slide number, a one-line "why it matched" (the item that matched
-   best, quoted briefly), and the terms it was used in.
+1. **Merge per slide.** A slide's score is its best `card`, `desc`, `said`, or `note` hit:
+   1/(60 + meaning rank) + 0.5 × 1/(60 + keyword rank). Return the top slides, not the top
+   chunks. (A bonus for slides matched by more than one kind was tried and measured worse:
+   hit@1 0.57 vs 0.68. It is off. Keyword ranks count half because at equal weight a keyword
+   match on an image description outranked the right slide; measured neutral on the eval.)
+2. **Group and explain.** Results come back as slide thumbnails, each showing course, term,
+   session and slide number, a one-line "why it matched" (the item that matched best, quoted
+   briefly), the kinds that matched, the scores, and the sessions it was used in.
+   Copies of the same slide from other courses or terms (identical text) are stacked into
+   one slot, with a tab per version labeled "Fall 2026 · AI for Business Leaders": each course
+   keeps its own copy in the database so its narration stays with it, and the stacking is done
+   at search time.
 3. **Say when nothing fits.** If the best score is past a cutoff picked from real numbers in
    Step 5, the page says "I don't think I taught this" and shows the closest few anyway,
    marked as weak.
-4. **Open it.** Clicking a slide opens it full size, with what I said over it (`history`):
-   one block per term, newest first.
+4. **Open it.** Clicking a slide opens it full size, with what I said over it ("Narration"):
+   one block per term, newest first, and the exact text of every item indexed for it.
 5. **Collect for a new deck.** "Pick" adds slides to a working set kept in the database, so it
    follows me between computers. "Export" downloads those slides, in order, as one PDF I can
    start a new deck from.
@@ -269,7 +276,7 @@ assumed:
 | One vector per slide mixed slide text and transcript | Separate `card` / `said` items, merged per slide | Score card-only vs said-only vs both |
 | Text cut off at the model limit | Voyage reads 32,000 tokens; the local Chroma model reads 256 word pieces, so chunks stay under 256 either way | Count the items that were truncated (should be 0) |
 | Embedding model choice | Voyage `voyage-3.5` (web) vs Chroma's default all-MiniLM-L6-v2 (local) | Same eval set on both backends |
-| Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Hybrid search: Postgres full-text rank fused with the vector rank (reciprocal rank fusion) in one SQL function | Score vector-only vs hybrid. **Measured Oct 26:** hybrid MRR 0.78 vs vector 0.73 on 28 questions; keywords alone 0.07 because long questions rarely contain every word |
+| Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Hybrid search: Postgres full-text rank fused with the vector rank (reciprocal rank fusion) in one SQL function | Score vector-only vs hybrid. **Measured Oct 26:** hybrid MRR 0.78 vs vector 0.73 on 28 questions on the first index; keywords alone 0.07 because long questions rarely contain every word. Later in the day keyword ranks were given half weight after a keyword-only match outranked the right slide; the eval did not move (hit@1 0.68, MRR 0.75). |
 
 **Eval set (phase 1):** Faculty Twin's labeled course questions: 28 with their correct slides
 (`expected_slides`) and 6 off-topic ones that should come back "not taught". They're read from
@@ -280,11 +287,15 @@ retrieval on the same questions.
 **Eval set (phase 2):** about 15 more of my own questions for Data Mining, labeled on a small
 judge page that shows the top 10 and lets me tick the good ones.
 
-**Metrics:** hit@5 (a good slide in the top 5), recall@10, and MRR. `slides eval` prints one row per
-configuration, and the winning configuration becomes the default. The table goes in the README.
+**Metrics:** hit@1 (a good slide first), hit@5 (a good slide in the top 5), recall@10 (share of
+the labeled slides in the top 10), MRR (mean of 1/position of the first good slide), and how many
+of the 6 off-topic questions were flagged. `eval/run.py` prints one row per configuration, and the
+winning configuration becomes the default. The table and plain-words definitions are in the README.
 
 Similarity is cosine everywhere. In pgvector that is the `<=>` operator, which returns cosine
-distance (0 = identical). The local Chroma collection is created with
+distance (0 = identical). The meaning side is an exact scan (migration 003): the HNSW index
+returns at most 40 candidates per query, which capped "show 100 slides" at about 24, and at this
+size the exact scan costs a few milliseconds. The local Chroma collection is created with
 `configuration={"hnsw": {"space": "cosine"}}` so the numbers read the same way.
 
 ## 8. Slide descriptions
@@ -299,6 +310,10 @@ costs nothing.
 - Cost guard: count the unique slides first and print the estimate; stop if it is over $15.
 - Transcript text sent to the model must already be de-identified.
 - Without a key, `card` falls back to slide text + notes, so graders can run without one.
+- **Titles** (added Oct 26): slides whose heading is only in the picture, or whose first text
+  line is a page number or a link (858 of them), get their title from the same model reading
+  the heading off the slide image (`title.py --vision`); the card and description items are
+  rebuilt with it. Four refused images are titled "Slide N".
 
 ## 9. Stack and hosting
 
@@ -322,13 +337,14 @@ history and the page are shared.
 ```
 sf_slides       slide_id pk, course, course_name, term, session, session_title, slide_number,
                 title, text, notes, description, image_path, thumb_path, used_in jsonb
-sf_items        id pk, slide_id fk, kind ('card'|'said'|'note'), term, occurrence_id, text,
+sf_items        id pk, slide_id fk, kind ('card'|'desc'|'said'|'note'), term, occurrence_id, text,
                 embedding halfvec(1024), fts tsvector (generated), created_at
-                index: hnsw (embedding halfvec_cosine_ops), gin (fts)
+                index: hnsw (embedding halfvec_cosine_ops, unused since migration 003), gin (fts)
 sf_occurrences  id pk, slide_id fk, term, session, windows jsonb, method, confidence, transcript
 sf_picks        position, slide_id fk
-sf_search(query_embedding, query_text, k)   SQL function: top 50 by vector + top 50 by full
-                text, fused by reciprocal rank, returns items with both scores
+sf_search(query_embedding, query_text, match_count, course_filter)   SQL function: top N by
+                vector (exact scan) + top N by full text, returns items with both ranks; the
+                app fuses them in Python, keyword rank at half weight
 ```
 
 RLS is on with no public policies. Only the server's key can read or write.
@@ -348,9 +364,11 @@ slidefinder/
   app.py             # routes: /api/search, /api/slide/<id>, /api/notes, /api/decks, /api/picks
   store.py           # SupabaseStore | ChromaStore, same methods
   embed.py           # Voyage (web) / Chroma default (local)
-  search.py          # merge per slide, cutoff, grouping
-  load.py            # phase 1 loader (CLI), later the raw archive
+  search.py          # fusion (keyword at half weight), merge per slide, cutoff, version stacking
+  load.py            # phase 1 loader (CLI)
+  archive.py, load_archive.py, align_text.py   # raw archive: render, group repeats, transcripts
   describe.py        # vision descriptions + cache
+  title.py           # titles for slides with no text title (vision)
 public/              # index.html, app.js, app.css (served statically by Vercel)
 supabase/migrations/ # schema + sf_search
 eval/run.py

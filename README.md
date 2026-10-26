@@ -58,7 +58,7 @@ searchable items, each with its own embedding:
 | --- | --- | --- |
 | card | Course, session, slide number and title, then the slide's own text and speaker notes | 2,801 |
 | image description | 60 to 90 words from a vision model (Claude Haiku 4.5) on what the slide shows: the chart and what it plots, the diagram, the code, the photo. This is what makes picture-only slides findable. | 2,801 |
-| what I said | About 120 words of what I said while the slide was on screen, split on sentence boundaries | 2,298 |
+| what I said (labeled "Narration" on the page) | About 120 words of what I said while the slide was on screen, split on sentence boundaries | 2,298 |
 | note | Anything I add from the page ("used this in the Deloitte workshop") | added at runtime |
 
 That is 7,900 searchable items. Search matches items, then merges them back into slides.
@@ -148,9 +148,9 @@ I taught this" and still shows the closest slides, marked as weak. The 0.55 cuto
 measured distances: on-topic questions came in at 0.46 to 0.50, off-topic ones at 0.58 to 0.60
 (`eval/step5_distances.md`).
 
-**Then.** Open a slide to see it full size. Under it is what I said over it, term by term, with
-the time it was on screen and how it was matched, plus the exact text of every item indexed for
-it. Pick slides for a new deck; the list is kept in the database, so it follows me between
+**Then.** Open a slide to see it full size. Beside it, under "Narration", is what I said over it,
+term by term, with the time it was on screen and how it was matched. Under the image is the exact
+text of every item indexed for it (narration chunks labeled with their term and "part 1 of 2"). Pick slides for a new deck; the list is kept in the database, so it follows me between
 computers. Export the picked slides, in order, as one PDF to start the new deck from.
 
 ## 4. Queries that keyword search would miss
@@ -174,9 +174,10 @@ then "Reinforcement Learning with Human Feedback"). "How do I get an AI to do a 
 on its own" returns "Key concepts of agentic AI". "Why does the chatbot make things up" returns
 "Hallucinations".
 
-Where the keyword side gets in the way: for "how does a computer read a photo", the one slide
-whose image description contains all of "computer", "read" and "photo" ranks first, and "Images
-are Numbers" (45-884, Computer Vision Fundamentals, slide 29), the slide I wanted, comes second.
+Where the keyword side got in the way: for "how does a computer read a photo", the one slide
+whose image description contains all of "computer", "read" and "photo" ranked first, and "Images
+are Numbers" (45-884, Computer Vision Fundamentals, slide 29), the slide I wanted, came second.
+That is why keyword ranks now count half (section 3); "Images are Numbers" is first.
 
 One that does not work: "it aced the practice problems but bombed the real test". The embedding
 reads it as being about exams, so the best match is 0.60 away and the page says "I don't think I
@@ -188,12 +189,38 @@ away from the concept miss; see `eval/step5_distances.md`.
 Measured with `eval/run.py` on 28 labeled questions from two courses (private file; aggregates
 only here), searching within the question's course. Final index: 2,801 slides, 7,900 items.
 
+**What the terms mean.**
+- *28 labeled questions*: questions I wrote the way a student would ask them, each with the
+  slide (sometimes two or three slides) that answers it. They live in a private file and are
+  never copied into the repo; only these aggregate scores are.
+- *6 off-topic questions*: questions about things I never taught, which should come back with
+  the "I don't think I taught this" warning.
+- *Course-scoped*: each question is searched within its own course, the way a student in that
+  course would use it.
+- *Modes*: "hybrid" fuses the meaning side (embeddings) with the keyword side (Postgres full-text
+  search); "meaning only" and "keywords only" use one side; "without the image descriptions"
+  is hybrid with the `desc` items left out, to measure what the descriptions add.
+- *hit@1*: the share of the 28 questions whose first result is a labeled slide. 0.68 means 19
+  of 28.
+- *hit@5*: the share whose labeled slide is somewhere in the first five results.
+- *recall@10*: for each question, the share of its labeled slides that appear in the top ten,
+  averaged over questions. Some questions label more than one slide, so this is not the same
+  as "a hit in the top ten": a question with three labeled slides and one of them in the top
+  ten scores 1/3.
+- *MRR* (mean reciprocal rank): for each question, 1 divided by the position of the first
+  labeled slide (1 for first, 0.5 for second, 0.1 for tenth, 0 if not in the top ten),
+  averaged. 1.0 would mean always first; 0.75 means the right slide is usually first or second.
+- *off-topic flagged 6/6*: for how many of the six off-topic questions the page showed its
+  warning. The warning fires when the best distance on the page is above 0.55.
+
+Latest run (after regrouping repeated slides and with keyword ranks at half weight):
+
 | Mode | hit@1 | hit@5 | recall@10 | MRR | off-topic flagged |
 | --- | --- | --- | --- | --- | --- |
-| hybrid (meaning + keywords), all item kinds | 0.68 | 0.86 | 0.74 | 0.76 | 6/6 |
-| meaning only | 0.68 | 0.86 | 0.74 | 0.77 | 6/6 |
+| hybrid (meaning + keywords), all item kinds | 0.68 | 0.86 | 0.74 | 0.75 | 6/6 |
+| meaning only | 0.68 | 0.86 | 0.74 | 0.76 | 6/6 |
 | keywords only | 0.04 | 0.04 | 0.04 | 0.04 | 6/6 |
-| hybrid without the image descriptions | 0.68 | 0.86 | 0.75 | 0.77 | 6/6 |
+| hybrid without the image descriptions | 0.68 | 0.86 | 0.75 | 0.76 | 6/6 |
 
 Earlier in the day, on the first index (two courses, 942 slides, no descriptions, no course filter):
 
@@ -217,6 +244,10 @@ What the numbers say:
   candidate pool got more crowded; filtering to the course brought off-topic flagging to 6/6.
 - Regrouping repeated slides by their embedded pictures (3,171 to 2,801 slides) raised hit@1
   from 0.64 to 0.68: one slide no longer fills several result slots with its own copies.
+- Giving keyword ranks half weight (section 3) fixed one visible mistake and moved none of these
+  numbers except MRR by a hundredth, which is one question moving one place. Five runs in all:
+  bonus on and off; after loading three more courses (scores fell until the search was scoped
+  to the course); after regrouping; after the keyword weight.
 - Misses in every mode: "what is MCP in plain english" and "how do I evaluate whether my RAG
   chatbot is giving good answers" (the relevant slides are code screenshots). Metaphors also
   miss: "the model said yes but it was actually no" never reaches the confusion-matrix slides
@@ -235,8 +266,9 @@ What the numbers say:
 
 To run it yourself:
 
-1. Create a free Supabase project. In the SQL editor, run `supabase/migrations/001_schema.sql`.
-   In Storage, create a private bucket named `slide-finder`.
+1. Create a free Supabase project. In the SQL editor, run the three files in
+   `supabase/migrations/` in order (`001_schema.sql`, `002_desc_items.sql`,
+   `003_exact_vector_scan.sql`). In Storage, create a private bucket named `slide-finder`.
 2. Copy `.env.example` to `.env` and fill in `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
    `VOYAGE_API_KEY`, and an `SF_PASSCODE`.
 3. `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
@@ -287,8 +319,8 @@ October 26, 2026. File and function names are given so each statement can be che
 Slide Finder has two halves that share one database:
 
 - **Offline (build machine, command line):** Python scripts read the lecture archive, render
-  slides, merge repeated slides, write image descriptions, match transcripts to slides, compute
-  embeddings and write everything to Supabase.
+  slides, merge repeated slides, write image descriptions, title slides whose heading is only in
+  the picture, match transcripts to slides, compute embeddings and write everything to Supabase.
 - **Online (Vercel):** a static page and a FastAPI function. They search the database, show
   slides and what was said over them, take notes and new decks, and export picked slides as a PDF.
 
@@ -381,7 +413,7 @@ flowchart TB
 | Database | Supabase Postgres with `pgvector` | Reached only through PostgREST over HTTPS with `httpx` (`slidefinder/db.py`); no database driver, no Supabase SDK. |
 | Images | Supabase Storage, private bucket `slide-finder` | Read through signed links that last one hour. |
 | Embeddings | Voyage AI `voyage-3.5`, 1024 dimensions | Documents use `input_type=document`, questions use `input_type=query`. |
-| Descriptions | Anthropic Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) | Offline only; never called by the web app. |
+| Descriptions and titles | Anthropic Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) | Offline only (`describe.py`, `title.py`); never called by the web app. |
 | Local run | `uvicorn slidefinder.app:app` | The same app serves `public/` itself through `StaticFiles`. |
 
 ## C. Repository map and module dependencies
@@ -393,15 +425,17 @@ flowchart TB
 | `slidefinder/db.py` | Thin HTTP client for PostgREST (upsert, insert, select, paged select, delete, RPC, count) and Storage (upload, signed links, signed upload links, download). |
 | `slidefinder/embed.py` | Voyage calls: `embed_documents` (batches of 100) and `embed_query`. |
 | `slidefinder/text.py` | Builds the embedded text: `card_text` and `said_chunks`. |
-| `slidefinder/search.py` | `search()` (hybrid retrieval, merge per slide, weak flag) and `slide_detail()`. |
+| `slidefinder/search.py` | `search()` (hybrid retrieval, fusion with `KEYWORD_WEIGHT`, merge per slide, version stacking, weak flag) and `slide_detail()`. |
 | `slidefinder/app.py` | All HTTP routes, the passcode, notes, picks, PDF export, deck upload. |
 | `slidefinder/load.py` | Phase 1 loader: Faculty Twin's processed build to Supabase. |
 | `slidefinder/archive.py` | Phase 2 step 1: renders raw decks to WebP and writes `build/<course>.jsonl`. Never touches the database. |
 | `slidefinder/load_archive.py` | Phase 2 step 2: groups repeated slides across terms, loads one copy of each. |
 | `slidefinder/describe.py` | Phase 2 step 3: writes image descriptions with a vision model, stores them as `desc` items. |
 | `slidefinder/align_text.py` | Phase 2 step 4: matches timed transcripts to slides by text, stores occurrences and `said` items. |
+| `slidefinder/title.py` | Titles slides that have no usable text title: `--vision` reads the heading off the slide image with Claude Haiku 4.5; without it, writes one from the text and description. Rebuilds and re-embeds the slide's card and description items. |
 | `supabase/migrations/001_schema.sql` | Tables, indexes, `sf_search`, `sf_exec`, row level security. |
 | `supabase/migrations/002_desc_items.sql` | Adds `desc` to the allowed item kinds. |
+| `supabase/migrations/003_exact_vector_scan.sql` | Makes the vector side of `sf_search` an exact scan, so large result counts are not capped by the HNSW index. |
 | `public/index.html`, `app.js`, `app.css` | The page. |
 | `eval/run.py` | Retrieval metrics on labeled questions. |
 | `eval/step5_distances.md` | The measured distances that set the "not taught" cutoff. |
@@ -423,6 +457,7 @@ flowchart BT
     load_archive["load_archive.py"] --> config & db & embed & archive & load & text
     describe["describe.py"] --> config & db & embed & text
     align["align_text.py"] --> config & db & embed & archive & load_archive & text & describe
+    title["title.py"] --> config & db & embed & archive & describe & text
     evalrun["eval/run.py"] --> search
 ```
 
@@ -507,7 +542,7 @@ picks. `sf_items.occurrence_id` is a plain text column, not a declared foreign k
 | `session_title` | text | Session (deck) title; for uploads, the deck name. | all |
 | `session_date` | date, nullable | Date of the session, from the folder name or Faculty Twin's `deck.json`. Null for uploads. | loaders |
 | `slide_number` | int | Page number within the deck, starting at 1. | all |
-| `title` | text | First line of the page text, cleaned (whitespace collapsed, at most 140 characters, empty when it has no run of three letters, which drops OCR noise). | all |
+| `title` | text | The first page-text line that reads as a title (page numbers and links are skipped; whitespace collapsed; at most 140 characters; a line with no run of three letters is OCR noise and is skipped). When no line qualifies, the heading read off the slide image by `title.py` (858 slides), or "Slide N" for the four images the model refused to describe. | loaders, `title.py` |
 | `text` | text | All page text from the PDF (PyMuPDF `get_text`, or pdf.js for uploads, capped at 8,000 characters). | all |
 | `notes` | text | Speaker notes from the pptx, matched by page index; empty when the pptx and pdf page counts differ. | loaders |
 | `description` | text | 60 to 90 word description of the image written by Claude Haiku 4.5. Empty until `describe.py` runs. | `describe.py` |
@@ -536,12 +571,14 @@ Each slide has one or more items. Search runs over items, then merges them per s
 | `created_at` | timestamptz | Insert time. |
 
 Indexes: HNSW on `embedding` with `halfvec_cosine_ops` (approximate nearest neighbour by cosine
-distance), GIN on `fts`, B-tree on `slide_id`.
+distance), GIN on `fts`, B-tree on `slide_id`. Since migration 003 the search function does not
+use the HNSW index (see [D.7](#d7-sf_search-hybrid-search-in-one-sql-function)); it stays in
+place for when the index is large enough to need it.
 
 | Kind | One per | What its text is | Created by |
 | --- | --- | --- | --- |
-| `card` | slide | Course, session, slide number and title, then the page text and speaker notes | `load.py`, `load_archive.py`, deck upload; rewritten by `describe.py --refold` |
-| `desc` | described slide | Course, session, slide number and title, then the vision model's description | `describe.py` |
+| `card` | slide | Course, session, slide number and title, then the page text and speaker notes | `load.py`, `load_archive.py`, deck upload; rewritten by `describe.py --refold` and by `title.py` |
+| `desc` | described slide | Course, session, slide number and title, then the vision model's description | `describe.py`; rewritten by `title.py` |
 | `said` | ~120 words of transcript | `[slide title]` then a chunk of what was said while the slide was on screen | `load.py` (video-matched), `align_text.py` (text-matched) |
 | `note` | note typed in the page | `[slide title]` then the note | `POST /api/notes` |
 
@@ -597,11 +634,11 @@ returns (id, slide_id, kind, term, text, vec_rank, fts_rank, distance, score)
 ```mermaid
 flowchart TB
     IN(["query vector, question text,<br/>match_count, course filter"])
-    V["Meaning side v:<br/>items with an embedding, joined to slides for the course filter,<br/>ordered by cosine distance (pgvector cosine operator), top match_count<br/>vec_rank = 1, 2, 3 ..., distance kept"]
+    V["Meaning side v:<br/>items with an embedding, joined to slides for the course filter,<br/>ordered by (cosine distance) + 0.0, an exact scan the HNSW index cannot serve,<br/>top match_count; vec_rank = 1, 2, 3 ..., distance kept"]
     F["Keyword side f:<br/>websearch_to_tsquery('english', question)<br/>items whose fts matches, ordered by ts_rank_cd, top match_count<br/>fts_rank = 1, 2, 3 ..."]
     J["Union of both sides, left joined back to sf_items"]
-    S["score = 1/(60 + vec_rank) + 1/(60 + fts_rank)<br/>a missing side adds 0"]
-    OUT(["rows ordered by score, highest first"])
+    S["score = 1/(60 + vec_rank) + 1/(60 + fts_rank)<br/>a missing side adds 0<br/>(the app ignores this column and refuses the ranks in Python)"]
+    OUT(["rows: one per item that hit on either side"])
     IN --> V & F --> J --> S --> OUT
 ```
 
@@ -610,8 +647,17 @@ flowchart TB
   joins plain words with AND, so every non-stop word must appear in one item. That is why long
   questions rarely get keyword hits ([section 5](#5-retrieval-scores)).
 - **Reciprocal rank fusion (RRF)** with the usual constant 60. Item ranks, not raw scores, are
-  combined, so the two sides do not need comparable scales. The highest possible score is
-  2/61 ≈ 0.0328 (first on both sides); first on one side only gives 1/61 ≈ 0.0164.
+  combined, so the two sides do not need comparable scales. The SQL function still returns an
+  equal-weight score, but `search.py` recomputes it from the ranks as
+  `1/(60 + vec_rank) + KEYWORD_WEIGHT × 1/(60 + fts_rank)` with `KEYWORD_WEIGHT = 0.5`, so the
+  highest possible score is 1/61 + 0.5/61 ≈ 0.0246; first on the meaning side only gives
+  1/61 ≈ 0.0164, first on the keyword side only 0.0082.
+- **Exact scan.** pgvector's HNSW index returns at most `hnsw.ef_search` candidates (40 by
+  default) however large the `limit`, so asking for 100 slides returned about 24. Supabase does
+  not allow `alter function ... set hnsw.ef_search`, so migration `003_exact_vector_scan.sql`
+  orders the meaning side by `(embedding <=> query) + 0.0`, an expression the index cannot serve.
+  Postgres then computes the distance for every item of the course: exact and uncapped, a few
+  milliseconds at under 10,000 items.
 - The app passes `match_count = max(60, 4 × n)` where `n` is the number of slides wanted, so
   each side returns 120 items at the default of 30 slides.
 
@@ -758,6 +804,7 @@ flowchart LR
     DS <--> C[("cache/descriptions.jsonl")]
     C --> AT
     AT --> DB
+    DB --> TI["title.py --vision"] --> DB
 ```
 
 For an archive course, the scripts must run in this order, because each depends on the one
@@ -768,6 +815,7 @@ python -m slidefinder.archive 45-851        # render pages to build/
 python -m slidefinder.load_archive 45-851   # merge repeats, load slides and cards (deletes the course first)
 python -m slidefinder.describe --course 45-851    # descriptions as desc items (cache makes re-runs free)
 python -m slidefinder.align_text 45-851     # transcripts as occurrences and said items
+python -m slidefinder.title --vision --yes  # titles for slides with no text title (all courses; cheap)
 ```
 
 `load_archive.py` begins by deleting every `sf_slides` row of the course. Because of the cascades
@@ -839,6 +887,10 @@ flowchart TB
     PG -- "deck done" --> L
     L -- "all sessions" --> OUT(["write build/{course}.jsonl"])
 ```
+
+The title is the first text line that reads as one (`title_of`): page numbers, links and OCR
+noise above it are skipped. Pages with no such line stay untitled until `title.py` runs
+([G.8](#g8-titling-slides-titlepy)).
 
 The difference hash (`dhash`) shrinks the page to 9 × 8 grey pixels and records, for each of the
 64 neighbouring pairs, whether the left pixel is brighter than the right. Similar-looking pages
@@ -981,6 +1033,21 @@ Only these fields are read; files are already de-identified before this project.
 
 Lines with `speaker` other than `instructor` (`student`, `unclear`) are ignored.
 
+### G.8 Titling slides (`title.py`)
+
+858 slides had no usable text title: the heading was part of a picture, or the first text line
+was a page number or a link. `python -m slidefinder.title --vision --yes` selects those slides
+(the ones whose text yields no title by the rule in G.3), sends each slide image (1024 px JPEG)
+to Claude Haiku 4.5 with "return the heading printed on this slide exactly as written, or a 3 to
+7 word title if there is none", writes the answer to `sf_slides.title`, rebuilds the slide's
+`card` and `desc` item texts (both start with the title) and re-embeds them. Without `--vision`
+it works from the extracted text and the image description alone, which is cheaper but
+paraphrases ("Business Advantages of Customer Segmentation" for a slide that says "Benefits of
+Customer Segmentation"), so the vision pass is the one in use. 32 vision answers came back as
+prose ("I don't see a heading printed on this slide...") and were replaced by short titles; the
+four slides whose image the model refused to describe are titled "Slide N". Cost: about $2 for
+all 858.
+
 ## H. Search, step by step
 
 ```mermaid
@@ -998,9 +1065,10 @@ sequenceDiagram
     S->>V: embed q (input_type=query)
     V-->>S: 1024 numbers
     S->>D: rpc sf_search(vector, q, match_count=max(60, 4n), course)
-    D-->>S: items with vec_rank, fts_rank, distance, fused score
+    D-->>S: items with vec_rank, fts_rank, distance (exact scan on the meaning side)
     S->>S: filter by mode (and by kinds, eval only)
-    S->>S: merge items per slide, rank slides, keep top n
+    S->>S: score = 1/(60+vec_rank) + 0.5/(60+fts_rank), merge items per slide, rank slides, keep top n
+    S->>S: stack versions: same slide text from another course or term shares one slot
     S->>D: select sf_slides where slide_id in (...)
     S->>ST: sign thumbnail links (one call, 1 hour)
     S-->>A: results, weak flag, best distance
@@ -1011,14 +1079,15 @@ sequenceDiagram
 ```mermaid
 flowchart TB
     H(["item hits from sf_search"]) --> M{"mode"}
-    M -- hybrid --> K1["keep all, fused score"]
+    M -- hybrid --> K1["keep all, score = 1/(60 + vec_rank) + 0.5 × 1/(60 + fts_rank)<br/>(KEYWORD_WEIGHT = 0.5; a missing side adds 0)"]
     M -- vector --> K2["keep items with a vec_rank,<br/>order by vec_rank, score = 1/(60 + position)"]
     M -- keyword --> K3["keep items with an fts_rank,<br/>order by fts_rank, score = 1/(60 + position)"]
     K1 & K2 & K3 --> G["group by slide_id"]
     G --> B["slide score = its best item's score,<br/>why = that item's kind, text, term,<br/>distance = smallest item distance,<br/>vec_rank, fts_rank = best of its items,<br/>kinds = set of kinds that hit, items = count"]
     B --> BO["× (1 + KIND_BONUS) if more than one kind hit<br/>(KIND_BONUS = 0, measured worse)"]
-    BO --> T["sort by score, keep n (1 to 100, default 30)"]
-    T --> W{"smallest distance among kept slides<br/>missing or > 0.55?"}
+    BO --> T["sort by score, ties by distance; keep n (1 to 100, default 30)"]
+    T --> SV["stack versions: slides with identical text (5+ words)<br/>from different courses or terms share the best one's slot,<br/>newest term first; same course and term never stack"]
+    SV --> W{"smallest distance among kept slides<br/>missing or > 0.55?"}
     W -- yes --> WK(["weak = true: page says<br/>'I don't think I taught this'"])
     W -- no --> OK(["weak = false"])
 ```
@@ -1038,12 +1107,20 @@ The response of `GET /api/search`:
       "kinds": ["card", "said"], "items": 4,      // kinds that hit, number of items that hit
       "why": {"kind": "said", "text": "[The sweet spot, ...] ...", "term": "2026 Fall"},
       "slide": {"slide_id", "course", "course_name", "term", "session", "session_title",
-                "slide_number", "title", "used_in"},
-      "thumb": "https://<project>.supabase.co/storage/v1/object/sign/...  (1 hour)"
+                "slide_number", "title", "text", "used_in"},
+      "thumb": "https://<project>.supabase.co/storage/v1/object/sign/...  (1 hour)",
+      "versions": [ { ...the same fields, one per version of this slide, newest term first... } ]
     }
   ]
 }
 ```
+
+`versions` holds every copy of the slide that landed in the results (one entry when there is
+only this copy). The page draws a result with several versions as a stacked card with one tab
+per version, labeled with the term and course ("Fall 2026 · AI for Business Leaders"); the tab
+swaps in that version's thumbnail, scores and why line. Copies are versions of one slide when
+their slide text is identical and at least five words (`search.family_key`); two copies from the
+same course and term are never stacked, since those are different slides sharing a caption.
 
 The 0.55 cutoff comes from `eval/step5_distances.md`: the best distance for on-topic questions
 was 0.46 to 0.50 and for off-topic questions 0.58 to 0.60.
@@ -1089,11 +1166,11 @@ sequenceDiagram
     P->>A: GET /api/slide/{slide_id}
     A->>D: sf_slides row
     A->>D: sf_occurrences for the slide, ordered by term (text order, descending)
-    A->>D: sf_items for the slide (id, kind, term, text, created_at)
     A->>A: sort items card, desc, said, note, notes = note items
     A->>ST: sign image and thumbnail links
+    A->>D: sf_items for the slide (id, kind, term, occurrence_id, text, created_at)
     A-->>P: {slide, image, occurrences, notes, items}
-    P->>P: dialog: full image, where it is, "What I said" per term<br/>(first window, minutes on screen, method),<br/>every indexed item with its word count, notes, note box
+    P->>P: dialog, two scrolling columns.<br/>Left: full image, "What is indexed" (every item with its word count;<br/>narration chunks with their term and "part k of n"), notes, note box.<br/>Right: title, where it is, Pick and Open image, "Narration" per term<br/>(first window, minutes on screen, matched by video or by text)
 ```
 
 ### I.3 Adding a note
@@ -1233,8 +1310,8 @@ stateDiagram-v2
 | Search bar | Question box, course filter (filled from `/api/courses`), "Find slides". |
 | Tools | "Show" slider (5 to 100 results, step 5, default 30, remembered in `localStorage` key `sf_n`), search mode (meaning + keywords, meaning only, keywords only), Picked count, Add deck. |
 | Status line | Number of slides and best distance, or the "I don't think I taught this" warning with the distance. |
-| Result card | Thumbnail, rank and title, course, term, session and slide number, "used in N sessions", the kinds that matched, score details (score, distance, meaning rank, keyword rank, items hit; a tooltip explains each) and "why": the best item's text, labeled "Slide says", "Image shows", "I said" or "My note". |
-| Slide dialog | Full image and a link to open it, where it is and where else it was used, "What I said" per term (first time window, minutes on screen, matched by video or by text with a lower-confidence label; long text collapses), every indexed item with its id and word count, notes, a note box. |
+| Result card | Thumbnail, rank and title, course, term, session and slide number, "used in N sessions", the kinds that matched (card, image, narration, note), score details (score, distance, meaning rank, keyword rank, items hit; a tooltip explains each) and "why": the best item's text, labeled "Slide says", "Image shows", "Narration" or "My note". A slide with versions in other courses or terms is one stacked card with "N versions" and a tab per version ("Fall 2026 · AI for Business Leaders"); a tab swaps in that version. |
+| Slide dialog | Two columns that scroll on their own. Left: the full image, "What is indexed for this slide" (every item with its id and word count; narration chunks also show their term and "part k of n"), notes and a note box. Right: title, where it is and where else it was used, Pick for new deck, Open image, and "Narration" per term (first time window, minutes on screen, matched by video or by text with a lower-confidence label; long text collapses). |
 | Picks dialog | Picked slides in order with Remove buttons; Export PDF. |
 | Add deck dialog | File, deck name (defaults to the file name), course label (default `mine`), progress line. pdf.js is imported only when a deck is added. |
 | Empty state | Ten example questions that are known to work. |
@@ -1281,13 +1358,14 @@ the server is HTML-escaped before it is inserted into the page.
 | `WEAK_DISTANCE` | 0.55 | `search.py` | "Not taught" cutoff. |
 | `TOP_SLIDES`, `MAX_SLIDES` | 30, 100 | `search.py` | Default and maximum number of slides returned. |
 | `KIND_BONUS` | 0.0 | `search.py` | Bonus for slides hit by more than one kind; 0.15 measured worse. |
-| RRF constant | 60 | `sf_search` | Rank fusion. |
+| `KEYWORD_WEIGHT` | 0.5 | `search.py` | A keyword rank counts half a meaning rank in the fused score. |
+| RRF constant | 60 | `sf_search`, `search.py` | Rank fusion. |
 | `match_count` | max(60, 4n) | `search.py` | Candidates per side. |
 | `IMAGE_WIDTH`, `THUMB_WIDTH` | 1600, 400 px | `archive.py` | Rendered sizes. |
 | `SIM`, `HAMMING` | 0.95, 10 bits | `load_archive.py` | Rule B for repeated slides. |
 | `PIC_BITS` | 24 of 256 bits | `load_archive.py` | Two embedded pictures this close are the same picture. |
 | Rule A, C thresholds | 12 bits / 25 words / 25 drawings; 6 of 256 bits | `load_archive.py` | Rules A and C. |
-| `MODEL` | `claude-haiku-4-5-20251001` | `describe.py` | Vision model. |
+| `MODEL` | `claude-haiku-4-5-20251001` | `describe.py`, `title.py` | Vision model for descriptions and titles. |
 | `COST_PER_SLIDE`, `COST_CAP` | $0.0025, $15 | `describe.py` | Cost guard before describing. |
 | `WINDOW_SECONDS`, `MIN_WINDOW_WORDS` | 45 s, 25 words | `align_text.py` | Transcript windows. |
 | `MIN_INSTRUCTOR_WORDS` | 500 | `align_text.py` | Minimum transcript size for a session. |
@@ -1308,7 +1386,7 @@ set to the question's course.
 
 | Metric | Definition |
 | --- | --- |
-| hit@1 | Share of answerable questions whose first result is an expected slide. |
+| hit@1 | Share of answerable questions whose first result is an expected slide (plain-words versions of all five are in [section 5](#5-retrieval-scores)). |
 | hit@5 | Share with an expected slide in the top 5. |
 | recall@10 | Mean over questions of (expected slides in the top 10) ÷ (expected slides). |
 | MRR | Mean of 1 ÷ rank of the first expected slide, 0 when none is in the top 10. |
@@ -1333,8 +1411,12 @@ take candidate places in that run. The scores are in [section 5](#5-retrieval-sc
   copies. If the upload stops between `begin` and `finish`, the images already sent stay in
   Storage with no rows pointing at them. Uploaded slides have no notes, description or
   transcript, and use the full image as the thumbnail.
-- **Repeats across courses** are not merged (grouping runs per course), and phase 1 courses are
-  not merged within their term.
+- **Repeats across courses** are not merged in the database (grouping runs per course, so each
+  course keeps its own narration); the search stacks them into one result instead. Phase 1
+  courses are not merged within their term.
+- **The HNSW index is built but unused** by `sf_search` since migration 003 (exact scan). At a
+  much larger index the function would need the index back, with a way to raise
+  `hnsw.ef_search`.
 - **Term order in the slide view** is text order, so "2026 Spring" sorts before "2026 Fall".
 - **Picks** are one shared list, not per person.
 - **Login rate limit** is per function instance, so it is a brake rather than a guarantee.
@@ -1353,9 +1435,11 @@ take candidate places in that run. The scores are in [section 5](#5-retrieval-sc
 | Canonical copy | The newest-term version of a repeated slide; the one that is indexed and shown. |
 | Embedding | 1024 numbers from Voyage that place a text so that similar meanings sit close together. |
 | Cosine distance | 1 − cosine similarity of two embeddings; 0 means the same direction. |
-| HNSW | The approximate nearest-neighbour index pgvector uses for fast vector search. |
+| HNSW | The approximate nearest-neighbour index pgvector uses for fast vector search; built here but bypassed by the search function (exact scan, migration 003). |
+| Narration | The page's label for what I said while a slide was on screen (the `said` items and the occurrence records). |
+| Version stack | One result slot holding every copy of a slide that other courses or terms have, with a tab per copy. |
 | `tsvector` / `tsquery` | Postgres full-text search: stemmed words of a document / of a query. |
-| RRF | Reciprocal rank fusion: add 1/(60 + rank) from each ranking. |
+| RRF | Reciprocal rank fusion: add 1/(60 + rank) from each ranking; here the keyword ranking's share is halved. |
 | dHash | Difference hash: a few dozen bits summarizing an image's brightness pattern. |
 | Hamming distance | Number of differing bits between two hashes. |
 | Phase 1 / phase 2 | Faculty Twin's processed single-term build / the raw archive across every term. |

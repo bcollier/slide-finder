@@ -266,6 +266,16 @@ side an exact scan (order by an expression the index cannot serve); 100 asked, 8
 
 Labels are now "Narration" everywhere on the page.
 
+> in the readme clarify what these terms all mean (hit@1 stays 0.68), explain all terms in the
+> evaluation and readme better. update all documentation to reflect the current state of hte
+> project
+
+README section 5 now defines every term (the labeled questions, course scoping, the modes,
+hit@1, hit@5, recall@10, MRR, off-topic flagged) in plain words with the latest numbers; the
+technical reference, SPEC.md and the demo script were brought up to the day's final state
+(picture-based grouping, version stacking, keyword weight, exact vector scan, titles, the
+Narration label, the new slide view layout).
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

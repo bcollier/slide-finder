@@ -55,7 +55,7 @@ function render(d) {
       ${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
       <div class="body">
         <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}</div>
-        <div class="where">${esc(where(s))}</div>
+        <div class="where">${esc(where(s))}${s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : ''}</div>
         <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${k === 'said' ? 'what I said' : k}</span>`).join('')}</div>
         <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
           <span>score <b>${r.score.toFixed(4)}</b>${r.score !== r.raw_score ? ` <small>(${r.raw_score.toFixed(4)} +${Math.round(d.kind_bonus * 100)}%)</small>` : ''}</span>
@@ -77,7 +77,7 @@ async function openSlide(id) {
   currentSlide = d.slide;
   $('#slide-img').src = d.image || ''; $('#open-img').href = d.image || '#';
   $('#slide-title').textContent = d.slide.title || '(untitled)';
-  $('#slide-where').textContent = where(d.slide) + (d.slide.used_in?.length > 1 ? ` · used in ${d.slide.used_in.join(', ')}` : '');
+  $('#slide-where').textContent = where(d.slide) + (d.slide.used_in?.length > 1 ? `\nAlso used in: ${d.slide.used_in.slice(1).join('; ')}` : '');
   $('#said').innerHTML = d.occurrences.length ? d.occurrences.map(o => {
     const win = (o.windows || [])[0];
     const t = win ? `${hms(win[0])}–${hms(win[win.length - 1] ?? win[1])}` : '';

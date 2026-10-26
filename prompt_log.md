@@ -210,4 +210,5 @@ The GitHub description was stale from Step 2 (Chroma); corrected.
 modes, with and without the image descriptions. Three runs during the day: the first showed my
 "two kinds matched" bonus hurt and it came out; the second, after loading three more courses,
 dropped because Data Mining now holds the same clustering material as the labeled course, so the
-third run filters to the question's course. Results and what they mean are in the README.
+third run filters to the question's course; the fourth, after regrouping repeated slides by
+their pictures, gained four points of hit@1. Results and what they mean are in the README.

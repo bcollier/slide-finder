@@ -182,14 +182,21 @@ computers. Export the picked slides, in order, as one PDF to start the new deck 
 
 ## 4. Queries that keyword search would miss
 
-Run on the live index (all courses, meaning + keywords) on October 26. In each case keyword-only
-search returns nothing at all.
+**The two test queries**, run on the live index (all courses, meaning + keywords) on October 26
+at 7 PM, after the final load:
+
+| Query | What it retrieves | Why keyword search misses it |
+| --- | --- | --- |
+| it fits the data it has seen perfectly and falls apart on anything new | 1st: "The sweet spot, a balance of bias and variance" (70-445 AI for Business Leaders, Machine Learning Fundamentals, slide 67), matched through the narration chunk where I describe overfitting, distance 0.50. 2nd: "How to Evaluate Model Performance?" (45-851 Data Mining), 0.52. 3rd: "Where symbolists break" (70-445), 0.52, also through narration. | The question and the slide share no words. The slide says "bias", "variance", "overfitting"; the question says "fits", "falls apart", "anything new". Keyword-only mode returns nothing and the page reports a weak match. |
+| how does a computer read a photo | 1st: "Images are Numbers" (45-884 AI Methods for Social and Visual Data, Computer Vision Fundamentals, slide 29), through the narration chunk "Ultimately, images are numbers. So behind the scenes, we're actually recording ... how much red, blue, and green are in each pixel", distance 0.46. 2nd: "Attention Mechanism Visualization Matrix" (the handwritten 3 as a grid of numbers), 0.50. 3rd: "Neural Networks Process Visual Data Differently" (70-445), 0.51. | The slide says "images", "numbers", "pixel", "RGB"; the question says "computer", "read", "photo". Keyword-only mode returns one wrong slide, whose image description happens to contain all three words, and nothing else. |
+
+Three more that work the same way:
 
 | Query | Slide it returns first | Words in common with the slide |
 | --- | --- | --- |
-| it fits the data it has seen perfectly and falls apart on anything new | "The sweet spot, a balance of bias and variance" (70-445, Machine Learning Fundamentals, slide 67), matched through what I said over it, distance 0.50 | none |
 | how are the words in a sentence turned into numbers | "Models Need Tokens to Think" (70-445, How Large Language Models Work, slide 54), distance 0.47 | none |
 | how do I find the main themes in a pile of documents | "NLP for Topic Clustering" (45-884, Natural Language Processing, slide 47), distance 0.52 | none |
+| how do I group customers into meaningful segments | "Customer Segmentation" (45-851 Data Mining, taught in 10 sessions, also in two other courses), distance 0.36 | "segments" only |
 
 Keyword search fails because the question uses everyday words and the slide uses the technical
 term ("overfitting", "tokens", "topic clustering"). Postgres also needs every word of the

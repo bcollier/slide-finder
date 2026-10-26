@@ -58,8 +58,8 @@ k-means slide seven times.
 ## 4. Data
 
 Source: my lecture archive (`LECTURE_ARCHIVE`, default `~/Lecture Archive`), one folder per
-course, term and session, each with `slides.pdf` and/or `slides.pptx`. About 1,450 deck files
-across 10 courses. Many repeat across terms.
+course, term and session, each with `slides.pdf` and/or `slides.pptx`. Many slides repeat
+across terms.
 
 | Input | Used for | Notes |
 | --- | --- | --- |
@@ -68,9 +68,23 @@ across 10 courses. Many repeat across terms.
 | Transcripts that are mine only (`*.cleaned.md` recorded scripts) or already de-identified (`transcripts-clean`, with timings) | `said` items | Never raw live-session transcripts: they contain student names and voices |
 | Slide/time alignment for the 17 sessions that have one | Which words go with which slide | For other sessions, words are matched to slides by text similarity (stretch) |
 
-**Scope for today:** the most recent term of each course, which is about 10 courses times
-10 to 14 sessions. Older terms get added once this works, mostly to show the duplicate grouping
-working.
+**Scope for this version: the five core courses I teach now, every term in the archive.**
+Older and occasional courses (Probability and Statistics, Data Exploration and Visualization,
+Managing Tech Talent, ML Foundations with Python, Math Skills Workshop) come later through `add deck`.
+
+| Course | Terms with decks | Sessions | PDF pages (approx.) |
+| --- | --- | --- | --- |
+| 45-851 Data Mining | 6 (Fall 2023 to Fall 2025) | 63 | 1,990 |
+| 45-885 Data Visualization | 5 (Spring 2024 to Spring 2026) | 35 | 1,390 |
+| 45-884 AI Methods for Social and Visual Data | 3 (Fall 2025 to Fall 2026) | 28 | 1,230 |
+| 70-445 AI for Business Leaders | 1 (Fall 2026) | 10 | 580 |
+| 46-887 Machine Learning for Business Applications | 1 (Spring 2026) | 7 | 270 |
+| **Total** | | **143** | **about 5,450** |
+
+Pages are counted from PDFs only (sessions with only a pptx add a few more). Every term is
+included, since repeated slides collapse to one copy (see "Repeated slides") with all of its
+terms listed. The estimate is 2,500 to 3,500 unique slides after merging; Step 4 measures it.
+Data Mining terms with no decks yet (Fall 2026) are skipped.
 
 **Privacy rules (hard):**
 - Nothing from the archive is committed: no slide images, transcripts, or `chroma_store/`.
@@ -182,11 +196,11 @@ Built one step at a time, checking each one before the next. The times are budge
 | 1 | Idea, data, two queries | This spec | done |
 | 2 | Install Chroma, five-line check | Imports, creates a collection | 15 min |
 | 3 | Persistent smoke test | 15 hand-typed slide cards survive a restart | 15 min |
-| 4 | Ingest one course (Data Mining, latest term) | slides.json + images, card items in Chroma, timing for 50 printed | 45 min |
+| 4 | Ingest one course (Data Mining, all six terms), then the other four | slides.json + images, card items in Chroma, timing for 50 printed, unique-slide count | 45 min |
 | 5 | Query and look at the distances | Both test queries checked; on-topic and off-topic distance ranges written down | 25 min |
 | 6 | Runtime add: `add deck`, `add note` | Added item shows up in the very next search | 20 min |
 | 7 | Do something: merge per slide, group, cutoff, open, pick, export | A new PDF comes out of three picks | 45 min |
-| 8 | Descriptions + `said` items + all courses | Background run, texts me when done | 40 min |
+| 8 | Descriptions + `said` items for the five courses | Background run, texts me when done | 40 min |
 | 9 | Eval: label 30 questions, compare configs | Table of hit@5 / MRR per configuration | 40 min |
 | 10 | README (first four sections in my own words), prompt log | Two separate files | 30 min |
 | 11 | Video, push, portfolio, form | Link works in an incognito window | 30 min |

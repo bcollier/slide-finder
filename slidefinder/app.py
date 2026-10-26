@@ -21,7 +21,7 @@ import time
 import unicodedata
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ from . import config, db, embed, search
 from .text import card_text
 
 app = FastAPI(title="Slide Finder", docs_url=None, redoc_url=None)
-PUBLIC = config.ROOT / "web"
+PUBLIC = config.ROOT / "public"
 COOKIE = "sf_session"
 
 
@@ -231,11 +231,6 @@ def deck_finish(body: DeckFinish):
     return {"ok": True, "slides": len(slides)}
 
 
-# ---- static page ----------------------------------------------------------
+# ---- static page (local dev; on Vercel, public/ is served before the function) -----------
 
-@app.get("/")
-def index():
-    return FileResponse(PUBLIC / "index.html")
-
-
-app.mount("/static", StaticFiles(directory=PUBLIC, check_dir=False), name="static")
+app.mount("/", StaticFiles(directory=PUBLIC, html=True, check_dir=False), name="static")

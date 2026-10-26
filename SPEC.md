@@ -324,7 +324,7 @@ usage in the dashboard before phase 2.
 jsPDF in the browser (cdnjs).
 
 ```
-api/index.py         # Vercel entry: the FastAPI app
+main.py              # Vercel entry: exposes the FastAPI app
 slidefinder/
   app.py             # routes: /api/search, /api/slide/<id>, /api/notes, /api/decks, /api/picks
   store.py           # SupabaseStore | ChromaStore, same methods
@@ -332,7 +332,7 @@ slidefinder/
   search.py          # merge per slide, cutoff, grouping
   load.py            # phase 1 loader (CLI), later the raw archive
   describe.py        # vision descriptions + cache
-web/                 # index.html, app.js, app.css
+public/              # index.html, app.js, app.css (served statically by Vercel)
 supabase/migrations/ # schema + sf_search
 eval/run.py
 ```

@@ -211,9 +211,9 @@ and add any PDF deck through the page.
 
 Printing the top three raw would earn a B. The app does this instead:
 
-1. **Merge per slide.** A slide's score combines its best `card`, `said`, and `note` hits
-   (best hit, plus a small bonus when more than one kind matched). Return the top slides, not
-   the top chunks.
+1. **Merge per slide.** A slide's score is its best `card`, `said`, or `note` hit. Return the top
+   slides, not the top chunks. (A bonus for slides matched by more than one kind was tried and
+   measured worse: hit@1 0.57 vs 0.68. It is off.)
 2. **Group and explain.** Results come back as slide thumbnails grouped by deck, each showing
    course, term, session and slide number, a one-line "why it matched" (the item that matched
    best, quoted briefly), and the terms it was used in.
@@ -250,7 +250,7 @@ assumed:
 | One vector per slide mixed slide text and transcript | Separate `card` / `said` items, merged per slide | Score card-only vs said-only vs both |
 | Text cut off at the model limit | Voyage reads 32,000 tokens; the local Chroma model reads 256 word pieces, so chunks stay under 256 either way | Count the items that were truncated (should be 0) |
 | Embedding model choice | Voyage `voyage-3.5` (web) vs Chroma's default all-MiniLM-L6-v2 (local) | Same eval set on both backends |
-| Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Hybrid search: Postgres full-text rank fused with the vector rank (reciprocal rank fusion) in one SQL function | Score vector-only vs hybrid |
+| Exact terms like "AWS" or "SMOTE" get blurred by embeddings | Hybrid search: Postgres full-text rank fused with the vector rank (reciprocal rank fusion) in one SQL function | Score vector-only vs hybrid. **Measured Oct 26:** hybrid MRR 0.78 vs vector 0.73 on 28 questions; keywords alone 0.07 because long questions rarely contain every word |
 
 **Eval set (phase 1):** Faculty Twin's labeled course questions: 28 with their correct slides
 (`expected_slides`) and 6 off-topic ones that should come back "not taught". They're read from

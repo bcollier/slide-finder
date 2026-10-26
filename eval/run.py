@@ -41,7 +41,10 @@ def score(rows: list[dict], mode: str, bonus: bool = True, kinds: set | None = N
     off_ok = off_n = 0
     misses = []
     for r in rows:
-        d = search(r["question"], None, mode, n=10, kinds=kinds)
+        # The labels name slides in the question's own course; other courses now hold the same
+        # material (Data Mining has its own clustering deck), so score within the course.
+        course = (r.get("course") or "").split(" ")[0] or None
+        d = search(r["question"], course, mode, n=10, kinds=kinds)
         ids = [x["slide_id"] for x in d["results"]]
         if r["expected"]:
             n_ans += 1

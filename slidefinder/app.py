@@ -159,16 +159,18 @@ def remove_pick(position: int):
 @app.get("/api/export.pdf", dependencies=[Depends(require_login)])
 def export_pdf():
     import fitz  # PyMuPDF, imported here so the function starts fast
+    from PIL import Image  # MuPDF cannot decode WebP, so Pillow converts each slide first
 
     picks = get_picks()
     if not picks:
         raise HTTPException(400, "nothing picked")
     doc = fitz.open()
     for p in picks:
-        img = db.download(p["slide"]["image_path"])
-        pix = fitz.Pixmap(img)
-        page = doc.new_page(width=pix.width, height=pix.height)
-        page.insert_image(page.rect, pixmap=pix)
+        im = Image.open(io.BytesIO(db.download(p["slide"]["image_path"]))).convert("RGB")
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=90)
+        page = doc.new_page(width=im.width * 0.5, height=im.height * 0.5)  # 1600 px wide -> 800 pt
+        page.insert_image(page.rect, stream=buf.getvalue())
     out = io.BytesIO(doc.tobytes(garbage=3, deflate=True))
     return StreamingResponse(out, media_type="application/pdf",
                              headers={"Content-Disposition": 'attachment; filename="picked-slides.pdf"'})

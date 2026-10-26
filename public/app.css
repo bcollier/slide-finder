@@ -1,4 +1,4 @@
-:root {
+:root { --heat: 178,34,28;
   --bg: #faf9f6; --fg: #1d1c1a; --muted: #6b6760; --line: #e4e1da; --card: #ffffff;
   --accent: #b3261e; --accent-ink: #fff; --weak: #8a6d00; --weak-bg: #fff7d6; --said-bg: #f3f1ec;
   color-scheme: light;
@@ -94,3 +94,38 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 .item .item-head { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
 .item pre { margin: 0; white-space: pre-wrap; font: 13.5px/1.45 inherit; font-family: inherit; }
 .mode input[type=range] { vertical-align: middle; width: 120px; }
+
+/* why this slide: D sentence + score split, C gauge, A ledger, B heat text */
+.because { font-size: 13px; line-height: 1.45; }
+.because .warn { color: var(--warn, #c77d00); }
+.score-split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); font-size: 9.5px; color: #fff; }
+.score-split i { display: block; height: 100%; text-align: center; line-height: 12px; overflow: hidden; white-space: nowrap; }
+.score-split .m { background: var(--accent); } .score-split .k { background: #3b5bdb; }
+.gauge { position: relative; height: 50px; margin: 2px 6px 0; }
+.gauge .axis { position: absolute; left: 0; right: 0; top: 24px; height: 2px; background: var(--line); }
+.gauge .tick { position: absolute; top: 29px; font-size: 10px; color: var(--muted); transform: translateX(-50%); }
+.gauge .weakzone { position: absolute; top: 20px; height: 10px; right: 0; background: rgba(var(--heat), .12); }
+.gauge .wk { position: absolute; top: 14px; width: 2px; height: 22px; background: var(--accent); transform: translateX(-50%); }
+.gauge .dot { position: absolute; top: 19px; width: 12px; height: 12px; border-radius: 50%; transform: translateX(-50%); border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--line); }
+.gauge .dot.card { background: #3b5bdb; } .gauge .dot.desc { background: #8e44ad; } .gauge .dot.said { background: var(--accent); } .gauge .dot.note { background: #2e7d4f; }
+.gauge .dot.best { width: 16px; height: 16px; top: 17px; }
+.gauge .lbl { position: absolute; top: 0; font-size: 10px; color: var(--muted); transform: translateX(-50%); white-space: nowrap; }
+.gauge .lbl.best { top: 40px; color: #2e7d4f; }
+details.evidence { margin-top: 2px; }
+details.evidence summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.ledger { display: grid; gap: 4px; margin-top: 6px; }
+.ev { display: grid; grid-template-columns: 78px 1fr 40px; gap: 6px; align-items: center; font-size: 12px; }
+.ev .ranks { grid-column: 2 / 4; font-size: 11px; color: var(--muted); margin-top: -3px; }
+.bar { height: 9px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+.bar.weakish i { background: #c77d00; }
+.miss-line { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.heat-head { margin-top: 8px; font-size: 11.5px; }
+.heat { font-size: 12.5px; line-height: 1.5; margin-top: 4px; }
+.heat .s { border-radius: 3px; padding: 0 2px; }
+mark { background: transparent; color: inherit; text-decoration: underline; text-decoration-color: #3b5bdb; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+.kind.card { color: #3b5bdb; border-color: #3b5bdb; } .kind.desc { color: #8e44ad; border-color: #8e44ad; }
+.version { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+.version-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.version-head img { width: 96px; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+.version-head div { flex: 1; min-width: 0; font-size: 13.5px; }

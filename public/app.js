@@ -48,7 +48,8 @@ function render(d) {
     ? `<span class="weak">I don't think I taught this. The closest slides are below, but treat them as weak matches` +
       (d.best_distance != null ? ` (best distance ${d.best_distance.toFixed(2)}).` : '.') + `</span>`
     : `${n} slide${n === 1 ? '' : 's'}` + (d.best_distance != null ? ` · best distance ${d.best_distance.toFixed(2)}` : '');
-  stacks = d.results;
+  stacks = d.results; lastResult = d;
+  qstems = new Set((d.question || '').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w.toLowerCase())).map(stem));
   results.innerHTML = d.results.map((r, i) => {
     const vs = r.versions || [r];
     return `<article class="hit${vs.length > 1 ? ' stack' : ''}" data-i="${i}" data-id="${esc(r.slide.slide_id)}">${cardInner(r, i, 0)}</article>`;
@@ -74,9 +75,62 @@ function cardInner(stackTop, i, k) {
           <span>keyword <b>${r.fts_rank == null ? '–' : '#' + r.fts_rank}</b></span>
           <span>${r.items} item${r.items === 1 ? '' : 's'} hit</span>
         </div>
-        <div class="why"><b>${whyLabel}:</b> ${esc(w.text || '').replace(/^\[[^\]]*\]\s*/, '')}</div>
+        ${evidence(r, s)}
       </div>`;
 }
+const STOP = new Set('a an the of to in on for and or is are was were be been how do does did i my we you it this that what which with by as at from into can should would will when where why'.split(' '));
+const stem = w => w.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5);
+let qstems = new Set();
+const KIND = { card: 'slide text', desc: 'image', said: 'narration', note: 'note' };
+const ordinal = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : Math.min(n % 10, 4)] || 'th');
+const markWords = t => esc(t).split(' ').map(w => qstems.has(stem(w)) && stem(w).length >= 3 ? `<mark>${w}</mark>` : w).join(' ');
+const closeness = d => Math.max(0, Math.min(1, (0.68 - d) / (0.68 - 0.34)));
+const gpos = d => Math.max(0, Math.min(100, (d - 0.30) / (0.70 - 0.30) * 100));
+function evidence(r, s) {
+  const ev = r.evidence || { items: [], misses: {} }, items = ev.items, it = items[0];
+  if (!it) return '';
+  const d = lastResult, W = 0.5;
+  // D. in words, with the score split
+  let why;
+  if (it.vec_rank != null && it.vec_rank <= 3) why = `Ranked here because its <b>${KIND[it.kind]}</b> was the <b>${ordinal(it.vec_rank)} closest item in the whole index</b> (distance ${it.distance.toFixed(2)})`;
+  else if (it.vec_rank != null) why = `Its <b>${KIND[it.kind]}</b> was the ${ordinal(it.vec_rank)} closest item by meaning (distance ${it.distance.toFixed(2)})`;
+  else why = `Here on <b>keywords alone</b>: its ${KIND[it.kind]} contains every word of the question (keyword #${it.fts_rank}), but nothing on this slide is close in meaning`;
+  why += it.fts_rank != null && it.vec_rank != null ? `, and it also matched the keywords (#${it.fts_rank}).` : (it.vec_rank != null ? '; no keyword match.' : '.');
+  const others = items.length - 1;
+  if (others > 0) why += ` ${others} other item${others > 1 ? 's' : ''} of this slide also matched${items[1].distance != null ? ` (next closest ${items[1].distance.toFixed(2)})` : ''}.`;
+  if (r.distance != null && d && r.distance > d.weak_distance) why += ` <span class="warn">Past the weak-match line.</span>`;
+  const mPart = it.vec_rank != null ? 1 / (60 + it.vec_rank) : 0, kPart = it.fts_rank != null ? W / (60 + it.fts_rank) : 0, max = 1 / 61 + W / 61;
+  const D = `<div class="because">${why}</div>
+    <div class="score-split" title="score ${(mPart + kPart).toFixed(4)} of a possible ${max.toFixed(4)}"><i class="m" style="width:${(mPart / max * 100).toFixed(1)}%">${mPart ? 'meaning' : ''}</i><i class="k" style="width:${(kPart / max * 100).toFixed(1)}%">${kPart ? 'keyword' : ''}</i></div>`;
+  // C. distance gauge
+  const weak = d ? d.weak_distance : 0.55, pageBest = d ? d.best_distance : null;
+  const dots = items.filter(x => x.distance != null).map((x, i) => `<span class="dot ${x.kind}${i === 0 ? ' best' : ''}" style="left:${gpos(x.distance)}%" title="${KIND[x.kind]} · distance ${x.distance.toFixed(3)}"></span>`).join('');
+  const ticks = [0.3, 0.4, 0.5, 0.6, 0.7].map(v => `<span class="tick" style="left:${gpos(v)}%">${v.toFixed(1)}</span>`).join('');
+  const C = `<div class="gauge"><div class="axis"></div><div class="weakzone" style="left:${gpos(weak)}%"></div><span class="wk" style="left:${gpos(weak)}%" title="weak beyond ${weak}"></span>${ticks}${dots}
+    ${r.distance != null ? `<span class="lbl" style="left:${gpos(r.distance)}%">this slide ${r.distance.toFixed(2)}</span>` : ''}
+    ${pageBest != null ? `<span class="lbl best" style="left:${gpos(pageBest)}%">▲ best on page</span>` : ''}</div>`;
+  // A. evidence ledger
+  const rows = items.map(x => {
+    const dist = x.distance, w = dist == null ? 0 : Math.round(closeness(dist) * 100);
+    const ranks = [x.vec_rank != null ? `meaning #${x.vec_rank}` : '', x.fts_rank != null ? `keyword #${x.fts_rank}` : ''].filter(Boolean).join(' · ');
+    return `<div class="ev"><span class="kind ${x.kind}">${KIND[x.kind]}</span><div class="bar${dist != null && dist > weak ? ' weakish' : ''}"><i style="width:${w}%"></i></div><span class="num">${dist == null ? '–' : dist.toFixed(2)}</span><span class="ranks">${ranks}</span></div>`;
+  }).join('');
+  const missed = Object.keys(ev.misses).length ? `<div class="miss-line">Did not match: ${Object.entries(ev.misses).map(([k, n]) => `${n} ${KIND[k]}${n > 1 && k === 'said' ? ' chunks' : ''}`).join(', ')}</div>` : '';
+  const A = `<div class="ledger">${rows}</div>${missed}`;
+  // B. heat text of the best item
+  let B;
+  if (it.sentences && it.sentences.length) {
+    const sents = it.sentences.slice().sort((a, b) => it.text.indexOf(a.text) - it.text.indexOf(b.text));
+    B = sents.map(x => `<span class="s" style="background:rgba(var(--heat),${Math.max(0, Math.min(.85, (0.62 - x.dist) / 0.3)).toFixed(2)})" title="distance ${x.dist.toFixed(2)}">${markWords(x.text)}</span>`).join(' ');
+  } else B = markWords(it.text);
+  const best = it.sentences && it.sentences.length ? it.sentences.slice().sort((a, b) => a.dist - b.dist)[0] : null;
+  const quote = best ? `<div class="why"><b>Best sentence</b> (${best.dist.toFixed(2)}): ${esc(best.text)}</div>` : `<div class="why"><b>${KIND[it.kind]}:</b> ${markWords(it.text.slice(0, 200))}</div>`;
+  return `${D}${C}${quote}<details class="evidence"${evidenceOpen ? ' open' : ''}><summary>Evidence</summary>${A}
+    <div class="heat-head"><span class="kind ${it.kind}">${KIND[it.kind]}</span> <span class="hint">each sentence shaded by its own closeness · <mark>underlined</mark> = a word from the question</span></div><div class="heat">${B}</div></details>`;
+}
+let lastResult = null, evidenceOpen = true;
+try { evidenceOpen = localStorage.getItem('sf_evidence') !== 'closed'; } catch (e) {}
+results.addEventListener('toggle', e => { if (e.target.classList.contains('evidence')) { evidenceOpen = e.target.open; try { localStorage.setItem('sf_evidence', evidenceOpen ? 'open' : 'closed'); } catch (x) {} } }, true);
 results.addEventListener('click', e => {
   const v = e.target.closest('.ver');
   if (!v) return;
@@ -86,23 +140,28 @@ results.addEventListener('click', e => {
   h.dataset.id = stacks[i].versions[k].slide.slide_id;
 }, true);
 results.addEventListener('click', e => { const h = e.target.closest('.hit'); if (h) openSlide(h.dataset.id); });
+$('#versions').addEventListener('click', e => { const b = e.target.closest('.open-version'); if (b) openSlide(b.dataset.id); });
 
 // ---- slide view ------------------------------------------------------------
 let currentSlide = null;
+function occBlock(o) {
+  const win = (o.windows || [])[0];
+  const t = win ? `${hms(win[0])}–${hms(win[win.length - 1] ?? win[1])}` : '';
+  const mins = (o.windows || []).reduce((a, w) => a + (w[1] - w[0]), 0);
+  return `<div class="occ collapsed"><div class="occ-head"><span><b>${esc(o.term)}</b> · session ${o.session}</span>
+    <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method + ' (lower confidence)'}` : ''}</span></div>
+    <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
+}
 async function openSlide(id) {
   const d = await api('/api/slide/' + encodeURIComponent(id));
   currentSlide = d.slide;
   $('#slide-img').src = d.image || ''; $('#open-img').href = d.image || '#';
   $('#slide-title').textContent = d.slide.title || '(untitled)';
   $('#slide-where').textContent = where(d.slide) + (d.slide.used_in?.length > 1 ? `\nAlso used in: ${d.slide.used_in.slice(1).join('; ')}` : '');
-  $('#said').innerHTML = d.occurrences.length ? d.occurrences.map(o => {
-    const win = (o.windows || [])[0];
-    const t = win ? `${hms(win[0])}–${hms(win[win.length - 1] ?? win[1])}` : '';
-    const mins = (o.windows || []).reduce((a, w) => a + (w[1] - w[0]), 0);
-    return `<div class="occ collapsed"><div class="occ-head"><span><b>${esc(o.term)}</b> · session ${o.session}</span>
-      <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method + ' (lower confidence)'}` : ''}</span></div>
-      <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
-  }).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
+  $('#said').innerHTML = d.occurrences.length ? d.occurrences.map(occBlock).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
+  $('#versions').innerHTML = (d.versions || []).length ? `<h3>Also in other courses</h3><p class="hint">The same slide, as taught elsewhere, with that course's narration.</p>` + d.versions.map(v => `
+    <div class="version"><div class="version-head">${v.thumb ? `<img src="${esc(v.thumb)}" alt="">` : ''}<div><b>${esc(v.slide.course_name)}</b> · ${esc(termLabel(v.slide.term))}<br><small class="hint">${esc(v.slide.session_title)}, slide ${v.slide.slide_number}${v.slide.used_in?.length > 1 ? ` · used in ${v.slide.used_in.length} sessions` : ''}</small></div><button class="ghost open-version" data-id="${esc(v.slide.slide_id)}">Open</button></div>
+    ${v.occurrences.length ? v.occurrences.map(o => occBlock(o)).join('') : '<p class="hint">No recording matched to this version.</p>'}</div>`).join('') : '';
   // "said" chunks: the narration from one term is cut into ~120-word pieces, each its own item.
   const parts = {};
   for (const it of d.items || []) if (it.kind === 'said') parts[it.occurrence_id || it.term] = (parts[it.occurrence_id || it.term] || 0) + 1;

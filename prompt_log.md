@@ -276,6 +276,30 @@ technical reference, SPEC.md and the demo script were brought up to the day's fi
 (picture-based grouping, version stacking, keyword weight, exact vector scan, titles, the
 Narration label, the new slide view layout).
 
+> I want a better visual that shows why each card was chosen so I can troubleshoot. perhaps
+> showing which text best matches the search phrase? or find a good way to visualize the "Why"
+> and the how strong of each connection. try a few different designs and I can pick. put time
+> and thought into this
+
+Four designs drawn with real data for one query on a comparison page (`docs/design/why-cards.html`):
+an evidence ledger, heat text (sentence-level closeness), a distance gauge, and a plain
+sentence with the score split.
+
+> I want to have the same slide from two different courses show up only once in the results so
+> the "3" image here and the "lion" image here even though they are in different courses should
+> be the same results (#3). make it clear when someone opens the slide that it is in different
+> courses, and what the narration is in different courses
+
+Picture-only slides have no text to match on, so every slide now stores the hash of its largest
+embedded picture (`family.py`, migration 004); results stack on identical text or, for
+picture-only slides, the same picture; the slide view lists versions in other courses with their
+own narration.
+
+> i want them all, I don't fully understand C but build it and then explain it
+
+All four evidence views are on every card: the sentence and score split, the gauge, and the
+ledger and heat text under a collapsible "Evidence". The gauge is explained in README section 3.
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

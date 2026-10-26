@@ -130,12 +130,37 @@ meaning #20 · keyword – · 1 item hit*.
   the ranking does not reward that, because measuring it showed a bonus made results worse
   (section 5).
 
+**Why each card was chosen.** Under the numbers, every card carries four views of its evidence,
+built from real data for that search:
+- *In words, with the score split.* One sentence states the cause ("Ranked here because its
+  narration was the 1st closest item in the whole index (distance 0.46); no keyword match"),
+  and a bar shows the score split into its meaning part and its keyword part.
+- *Distance gauge.* A ruler from 0.3 to 0.7. Every item of the slide that matched is a dot,
+  colored by kind (blue slide text, purple image description, red narration); the big dot is
+  the one that ranked the slide. The red line at 0.55 is the weak-match threshold and the
+  shaded zone past it is where results stop being trusted. A green marker shows the best
+  distance on the page, so each card can be read against the best one. Keyword-only hits have
+  no distance and get a sentence instead of a dot.
+- *Evidence ledger* (under "Evidence"). One row per matched item with a closeness bar, its
+  distance and its rank on each side, then "Did not match: 2 narration chunks, 1 image" so
+  absences show too.
+- *Heat text.* The full text of the closest item with each sentence shaded by how close it is
+  to the question on its own, and the question's words underlined. This is one extra embedding
+  call per page of results (all sentences of the top 40 slides in one parallel batch, about
+  a second).
+The "Evidence" section can be collapsed; the page remembers the choice.
+
 The same slide often lives in more than one course (my customer segmentation slide is in three),
 and each course keeps its own copy so that what I said in that course stays with it. In the
 results those copies are stacked into one slot, as a stacked card with a tab per version ("Fall
 2026 · AI for Business Leaders", "Fall 2025 · Data Mining"); clicking a tab shows that version's
-match and scores. Two copies from the same course and term never stack: those are different
-slides that share a caption, such as the steps of a build-up.
+match and scores. Two slides are versions of one slide when their text is identical, or, for
+picture-only slides (under five words of text), when they carry the same embedded picture
+(`sf_slides.pic_hash`, the 256-bit hash of the largest picture in the page, computed by
+`slidefinder/family.py` for every slide including the two courses loaded from the Faculty Twin
+build). Two copies from the same course and term never stack: those are different slides that
+share a caption, such as the steps of a build-up. Opening a slide lists its versions in other
+courses under "Also in other courses", each with that course's own narration and an Open button.
 
 The page has a course filter, a search mode (meaning + keywords, meaning only, keywords only),
 and a slider for 5 to 100 results. The vector side is an exact scan rather than an index

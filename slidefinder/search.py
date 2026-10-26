@@ -7,6 +7,10 @@ module merges them per slide, decides whether anything fits, and attaches the sl
 
 from __future__ import annotations
 
+import math
+import re
+from concurrent.futures import ThreadPoolExecutor
+
 from . import db, embed
 
 # Cosine distance of the best vector hit above which the page says "I don't think I taught this".
@@ -44,6 +48,9 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
                                                  "why": None, "distance": None, "vec_rank": None, "fts_rank": None,
                                                  "items": 0})
         s["items"] += 1
+        s.setdefault("hits", []).append({"id": h["id"], "kind": h["kind"], "term": h["term"], "distance": h["distance"],
+                                         "vec_rank": h["vec_rank"], "fts_rank": h["fts_rank"],
+                                         "text": re.sub(r"^\[[^\]]*\]\s*", "", h["text"] or "")})
         for key in ("vec_rank", "fts_rank"):
             if h[key] is not None and (s[key] is None or h[key] < s[key]):
                 s[key] = h[key]
@@ -66,6 +73,11 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
     # Ties (same ranks) go to the slide whose item is closer in meaning.
     ranked = sorted(by_slide.values(), key=lambda s: (-s["score"], s["distance"] if s["distance"] is not None else 9))[:n]
 
+    for s in ranked:
+        s["hits"].sort(key=lambda h: ((h["vec_rank"] if h["vec_rank"] is not None else 10**6),
+                                      (h["fts_rank"] if h["fts_rank"] is not None else 10**6)))
+    attach_evidence(ranked, qvec)
+
     # Attach slide rows and signed thumbnails.
     ids = [s["slide_id"] for s in ranked]
     rows = {r["slide_id"]: r for r in db.select("sf_slides", {"slide_id": f"in.({','.join(ids)})"})} if ids else {}
@@ -75,24 +87,90 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
         r = rows.get(s["slide_id"])
         if not r:
             continue
+        s["evidence"] = {"items": s.pop("hits", []), "misses": s.pop("misses", {})}
         results.append({**s, "slide": {k: r[k] for k in (
             "slide_id", "course", "course_name", "term", "session", "session_title", "slide_number",
-            "title", "text", "used_in")}, "thumb": thumbs.get(r.get("thumb_path") or "")})
+            "title", "text", "pic_hash", "used_in")}, "thumb": thumbs.get(r.get("thumb_path") or "")})
 
     results = stack_versions(results)
 
     best = min((s["distance"] for s in ranked if s["distance"] is not None), default=None)
     return {
         "question": question, "mode": mode, "n": n, "kind_bonus": KIND_BONUS,
-        "weak": best is None or best > WEAK_DISTANCE, "best_distance": best,
+        "weak": best is None or best > WEAK_DISTANCE, "best_distance": best, "weak_distance": WEAK_DISTANCE,
         "results": results,
     }
+
+
+EVIDENCE_SLIDES = 40  # sentence closeness is computed for this many top results
+MAX_SENTENCES = 10  # per best item, for the sentence-level closeness shown on the card
+
+
+def sentences_of(text: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+|\n+", text or "")
+    return [p.strip() for p in parts if len(p.split()) >= 3][:MAX_SENTENCES]
+
+
+def attach_evidence(ranked: list[dict], qvec: list[float]) -> None:
+    """For each ranked slide: which of its items did not match at all, and how close each
+    sentence of its best item is to the question (one embedding batch for the whole page)."""
+    ids = [s["slide_id"] for s in ranked]
+    if not ids:
+        return
+    all_items = db.select_all("sf_items", {"slide_id": f"in.({','.join(ids)})", "select": "id,slide_id,kind"})
+    hit_ids = {h["id"] for s in ranked for h in s["hits"]}
+    for s in ranked:
+        s["misses"] = {}
+    by_id = {s["slide_id"]: s for s in ranked}
+    for it in all_items:
+        if it["id"] not in hit_ids:
+            m = by_id[it["slide_id"]]["misses"]
+            m[it["kind"]] = m.get(it["kind"], 0) + 1
+    sents, owners = [], []
+    for s in ranked[:EVIDENCE_SLIDES]:
+        if s["hits"]:
+            for t in sentences_of(s["hits"][0]["text"]):
+                sents.append(t)
+                owners.append(s["hits"][0])
+    if not sents:
+        return
+    try:
+        batches = [sents[k:k + 100] for k in range(0, len(sents), 100)]
+        with ThreadPoolExecutor(max_workers=min(6, len(batches))) as ex:
+            vecs = [v for part in ex.map(embed.embed_documents, batches) for v in part]
+    except Exception:
+        return
+    qn = math.sqrt(sum(x * x for x in qvec)) or 1.0
+    for owner, text, v in zip(owners, sents, vecs):
+        vn = math.sqrt(sum(x * x for x in v)) or 1.0
+        sim = sum(a * b for a, b in zip(qvec, v)) / (qn * vn)
+        owner.setdefault("sentences", []).append({"text": text, "dist": round(1 - sim, 4)})
+
+
+PIC_BITS = 24  # same threshold as the loader: pictures this close are the same picture
 
 
 def family_key(text: str) -> str | None:
     """Slides with the same text (5+ words) are versions of one slide, whatever course or term."""
     words = (text or "").lower().split()
     return " ".join(words) if len(words) >= 5 else None
+
+
+def picture_only(text: str) -> bool:
+    return len((text or "").split()) < 5
+
+
+def same_slide(a: dict, b: dict) -> bool:
+    """Two result slides are versions of one slide: identical text, or (for picture-only
+    slides) the same embedded picture."""
+    if (a["course"], a["term"]) == (b["course"], b["term"]):
+        return False  # same deck family: build-up steps and captions, not versions
+    ka, kb = family_key(a.get("text")), family_key(b.get("text"))
+    if ka and kb:
+        return ka == kb
+    if picture_only(a.get("text")) and picture_only(b.get("text")) and a.get("pic_hash") and b.get("pic_hash"):
+        return bin(int(a["pic_hash"], 16) ^ int(b["pic_hash"], 16)).count("1") <= PIC_BITS
+    return False
 
 
 def term_order(term: str) -> tuple:
@@ -105,22 +183,15 @@ def term_order(term: str) -> tuple:
 
 def stack_versions(results: list[dict]) -> list[dict]:
     """Group versions of the same slide from different courses or terms into one result, in the
-    slot of the best-ranked version. Two copies from the same course and term are kept apart:
-    those are different slides that happen to share a caption (build-up steps, for example)."""
+    slot of the best-ranked version. Versions share their text, or, for picture-only slides,
+    their picture. Two copies from the same course and term are kept apart."""
     stacks: list[dict] = []
     for r in results:
-        key = family_key(r["slide"].get("text"))
-        home = None
-        if key:
-            for st in stacks:
-                if st["key"] == key and all((v["slide"]["course"], v["slide"]["term"]) !=
-                                            (r["slide"]["course"], r["slide"]["term"]) for v in st["versions"]):
-                    home = st
-                    break
+        home = next((st for st in stacks if all(same_slide(r["slide"], v["slide"]) for v in st["versions"])), None)
         if home:
             home["versions"].append(r)
         else:
-            stacks.append({"key": key, "versions": [r]})
+            stacks.append({"versions": [r]})
     out = []
     for st in stacks:
         vs = sorted(st["versions"], key=lambda v: term_order(v["slide"]["term"]), reverse=True)
@@ -142,4 +213,27 @@ def slide_detail(slide_id: str) -> dict | None:
     notes = [i for i in items if i["kind"] == "note"]
     urls = db.signed_urls([p for p in (r.get("image_path"), r.get("thumb_path")) if p])
     return {"slide": r, "image": urls.get(r.get("image_path") or ""), "occurrences": occ, "notes": notes,
-            "items": items}
+            "items": items, "versions": slide_versions(r)}
+
+
+def slide_versions(r: dict) -> list[dict]:
+    """The same slide in other courses or terms (same text, or the same picture for a
+    picture-only slide), each with its own narration."""
+    sel = "slide_id,course,course_name,term,session,session_title,slide_number,title,used_in,thumb_path"
+    if family_key(r.get("text")):
+        others = db.select("sf_slides", {"text": f"eq.{r['text']}", "select": sel})
+    elif r.get("pic_hash"):
+        others = db.select("sf_slides", {"pic_hash": f"eq.{r['pic_hash']}", "select": sel})
+    else:
+        return []
+    others = [o for o in others if o["slide_id"] != r["slide_id"] and (o["course"], o["term"]) != (r["course"], r["term"])]
+    if not others:
+        return []
+    ids = [o["slide_id"] for o in others]
+    occ = db.select("sf_occurrences", {"slide_id": f"in.({','.join(ids)})", "order": "term.desc"})
+    thumbs = db.signed_urls([o["thumb_path"] for o in others if o.get("thumb_path")])
+    out = []
+    for o in sorted(others, key=lambda o: term_order(o["term"]), reverse=True):
+        out.append({"slide": o, "thumb": thumbs.get(o.get("thumb_path") or ""),
+                    "occurrences": [x for x in occ if x["slide_id"] == o["slide_id"]]})
+    return out

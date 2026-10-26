@@ -103,7 +103,8 @@ its best item.
 Each result shows:
 - the thumbnail, course, term, session and slide number, and how many sessions used the slide;
 - which kinds of item matched, and the numbers explained below;
-- a "why" line quoting the best item, labeled "Slide says", "Image shows", "I said" or "My note".
+- a "why" line quoting the best item, labeled "Slide says", "Image shows", "Narration" (what I
+  said while the slide was on screen) or "My note".
 
 **Reading the numbers on a card.** Take a card that reads *score 0.0125 · distance 0.446 ·
 meaning #20 · keyword – · 1 item hit*.
@@ -113,9 +114,13 @@ meaning #20 · keyword – · 1 item hit*.
   needs every word of the question to appear, so most long questions match nothing here; it is
   kept for short exact terms such as "SMOTE" or "mtry", where it ranks those slides first.
 - *Score 0.0125*: the combined rank score (reciprocal rank fusion). Every item gets
-  1/(60 + rank) from the meaning list plus 1/(60 + rank) from the keyword list; a slide takes
-  its best item's score. Here 1/(60 + 20) = 0.0125 with nothing from keywords. A slide ranked
-  first on both lists would score 0.0328. Results are sorted by this score, highest first.
+  1/(60 + rank) from the meaning list plus half of 1/(60 + rank) from the keyword list; a slide
+  takes its best item's score. Here 1/(60 + 20) = 0.0125 with nothing from keywords. A slide
+  ranked first on both lists would score 0.0246. Results are sorted by this score, highest
+  first; ties go to the closer slide by meaning. The keyword side counts half because, with
+  equal weight, a slide whose image description happened to contain "computer", "read" and
+  "photo" outranked "Images are Numbers" for "how does a computer read a photo"; halving it
+  changed nothing in the evaluation (hit@1 0.68 either way).
 - *Distance 0.446*: how far the question's embedding is from the slide's closest item. 0 would
   be identical meaning, 1 unrelated. On-topic answers across my material run from about 0.35
   to 0.50; when the best distance on the page is above 0.55 the page says "I don't think I
@@ -133,7 +138,10 @@ match and scores. Two copies from the same course and term never stack: those ar
 slides that share a caption, such as the steps of a build-up.
 
 The page has a course filter, a search mode (meaning + keywords, meaning only, keywords only),
-and a slider for 5 to 100 results.
+and a slider for 5 to 100 results. The vector side is an exact scan rather than an index
+lookup: pgvector's HNSW index returns at most 40 candidates per query whatever the limit (the
+"show 100" slider returned 24 slides until this changed), Supabase does not let the function
+raise that setting, and at under 10,000 items the exact scan takes a few milliseconds.
 
 When even the best match is far away (cosine distance above 0.55), the page says "I don't think
 I taught this" and still shows the closest slides, marked as weak. The 0.55 cutoff came from
@@ -539,7 +547,7 @@ distance), GIN on `fts`, B-tree on `slide_id`.
 
 ### D.4 `sf_occurrences`: what was said over a slide, per term
 
-One row per (slide, term). The slide view lists them under "What I said".
+One row per (slide, term). The slide view lists them under "Narration".
 
 | Column | Type | Meaning |
 | --- | --- | --- |

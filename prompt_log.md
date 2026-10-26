@@ -238,6 +238,34 @@ and links when picking a title.
 
 Added "Reading the numbers on a card" to README section 3, worked through one card.
 
+> the layout wastes a lot of space iwth black
+
+Slide view rearranged: the image, the indexed text and notes in the left column; title,
+actions and narration on the right; both columns scroll on their own.
+
+> it's not clear to me why this entry of a instagram video is getting the top spot for computer vision
+
+The slide's image description contained "computer", "read" and "photo", so it was #1 on the
+keyword side, and a keyword #1 scored the same as a meaning #1. Keyword ranks now count half,
+and ties go to the slide closer in meaning. Evaluation unchanged (hit@1 0.68).
+
+> the titles had a bug
+
+32 titles from the vision pass were prose ("I don't see a heading printed on this lecture
+slide. Based on what it shows, here's a title: ..."). Replaced with short titles; my sweep
+then also shortened 38 legitimate long titles (slide text quoted as the title) and those were
+restored.
+
+> why does it only show 24 slides when I put max slides of 100
+
+pgvector's HNSW index returns at most `hnsw.ef_search` (40) candidates, whatever the limit.
+Supabase refused `alter function ... set hnsw.ef_search`, so migration 003 makes the vector
+side an exact scan (order by an expression the index cannot serve); 100 asked, 89 stacks back.
+
+> instead of "I said" put somehting like "Narration text" or subtitles
+
+Labels are now "Narration" everywhere on the page.
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three
@@ -245,4 +273,4 @@ modes, with and without the image descriptions. Three runs during the day: the f
 "two kinds matched" bonus hurt and it came out; the second, after loading three more courses,
 dropped because Data Mining now holds the same clustering material as the labeled course, so the
 third run filters to the question's course; the fourth, after regrouping repeated slides by
-their pictures, gained four points of hit@1. Results and what they mean are in the README.
+their pictures, gained four points of hit@1; a fifth, with keyword ranks at half weight, was unchanged. Results and what they mean are in the README.

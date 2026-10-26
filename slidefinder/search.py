@@ -17,6 +17,7 @@ MAX_SLIDES = 100
 # Score boost when more than one kind of item matched the same slide. Started at 0.15; eval/run.py on
 # 28 labeled questions (Oct 26) showed it hurt (hit@1 0.57 vs 0.68, MRR 0.72 vs 0.78), so it is off.
 KIND_BONUS = 0.0
+KEYWORD_WEIGHT = 0.5  # a keyword rank counts half a meaning rank: keywords alone rarely find the right slide (see eval)
 
 
 def search(question: str, course: str | None = None, mode: str = "hybrid", n: int = TOP_SLIDES,
@@ -46,7 +47,11 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
         for key in ("vec_rank", "fts_rank"):
             if h[key] is not None and (s[key] is None or h[key] < s[key]):
                 s[key] = h[key]
-        score = h["score"] if mode == "hybrid" else 1.0 / (60 + rank)
+        if mode == "hybrid":
+            score = ((1.0 / (60 + h["vec_rank"]) if h["vec_rank"] is not None else 0.0)
+                     + KEYWORD_WEIGHT * (1.0 / (60 + h["fts_rank"]) if h["fts_rank"] is not None else 0.0))
+        else:
+            score = 1.0 / (60 + rank)
         if score > s["score"]:
             s["score"] = score
             s["why"] = {"kind": h["kind"], "text": h["text"], "term": h["term"]}
@@ -58,7 +63,8 @@ def search(question: str, course: str | None = None, mode: str = "hybrid", n: in
         if len(s["kinds"]) > 1:
             s["score"] *= 1 + KIND_BONUS
         s["kinds"] = sorted(s["kinds"])
-    ranked = sorted(by_slide.values(), key=lambda s: -s["score"])[:n]
+    # Ties (same ranks) go to the slide whose item is closer in meaning.
+    ranked = sorted(by_slide.values(), key=lambda s: (-s["score"], s["distance"] if s["distance"] is not None else 9))[:n]
 
     # Attach slide rows and signed thumbnails.
     ids = [s["slide_id"] for s in ranked]

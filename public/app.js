@@ -58,7 +58,7 @@ let stacks = [];
 const termLabel = t => { const m = /^(\d{4})\s+(\w+)\s*(.*)$/.exec(t || ''); return m ? `${m[2]} ${m[1]}${m[3] ? ' ' + m[3] : ''}` : (t || ''); };
 function cardInner(stackTop, i, k) {
   const vs = stackTop.versions || [stackTop], r = vs[k], s = r.slide, w = r.why || {};
-  const whyLabel = { card: 'Slide says', said: 'I said', note: 'My note', desc: 'Image shows' }[w.kind] || '';
+  const whyLabel = { card: 'Slide says', said: 'Narration', note: 'My note', desc: 'Image shows' }[w.kind] || '';
   const tabs = vs.length > 1 ? `<div class="vers" title="Versions of this slide: same text, different course or term">${vs.map((v, j) =>
       `<button class="ver${j === k ? ' on' : ''}" data-k="${j}">${esc(termLabel(v.slide.term))} · ${esc(v.slide.course_name)}</button>`).join('')}</div>` : '';
   return `${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
@@ -66,7 +66,7 @@ function cardInner(stackTop, i, k) {
         <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}${vs.length > 1 ? ` <small class="nver">${vs.length} versions</small>` : ''}</div>
         ${tabs}
         <div class="where">${esc(where(s))}${s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : ''}</div>
-        <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${{ said: 'what I said', desc: 'image' }[k] || k}</span>`).join('')}</div>
+        <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${{ said: 'narration', desc: 'image' }[k] || k}</span>`).join('')}</div>
         <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
           <span>score <b>${r.score.toFixed(4)}</b></span>
           <span>distance <b>${r.distance == null ? '–' : r.distance.toFixed(3)}</b></span>
@@ -103,12 +103,12 @@ async function openSlide(id) {
       <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method + ' (lower confidence)'}` : ''}</span></div>
       <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
   }).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
-  // "said" chunks: what I said in one term is cut into ~120-word pieces, each its own item.
+  // "said" chunks: the narration from one term is cut into ~120-word pieces, each its own item.
   const parts = {};
   for (const it of d.items || []) if (it.kind === 'said') parts[it.occurrence_id || it.term] = (parts[it.occurrence_id || it.term] || 0) + 1;
   const seen = {};
   $('#items').innerHTML = (d.items || []).map(it => {
-    let head = { said: 'what I said', desc: 'image description' }[it.kind] || it.kind;
+    let head = { said: 'narration', desc: 'image description' }[it.kind] || it.kind;
     if (it.kind === 'said') {
       const key = it.occurrence_id || it.term, n = parts[key]; seen[key] = (seen[key] || 0) + 1;
       head += ` · ${esc(it.term || '')}` + (n > 1 ? ` · part ${seen[key]} of ${n}` : '');

@@ -15,6 +15,7 @@
     <button type="submit">Find slides</button>
   </form>
   <div class="tools">
+    <label class="mode">Show <input id="n" type="range" min="5" max="100" step="5" value="30"> <span id="n-val">30</span></label>
     <label class="mode">Search <select id="mode"><option value="hybrid">meaning + keywords</option><option value="vector">meaning only</option><option value="keyword">keywords only</option></select></label>
     <button id="picks-btn" class="ghost">Picked <span id="picks-count">0</span></button>
     <button id="add-deck-btn" class="ghost">Add deck</button>
@@ -48,6 +49,9 @@
       </div>
       <h3>What I said</h3>
       <div id="said"></div>
+      <h3>What is indexed for this slide</h3>
+      <p class="hint">The exact text that was embedded. Each block is one searchable item.</p>
+      <div id="items"></div>
       <h3>My notes</h3>
       <ul id="notes"></ul>
       <form id="note-form" class="note-form">

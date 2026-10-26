@@ -24,6 +24,10 @@ $('#login-form').addEventListener('submit', async e => {
 // ---- search ----------------------------------------------------------------
 $('#search').addEventListener('submit', e => { e.preventDefault(); run(); });
 $('#mode').addEventListener('change', () => q.value.trim() && run());
+const nEl = $('#n'), nVal = $('#n-val');
+try { const saved = localStorage.getItem('sf_n'); if (saved) { nEl.value = saved; nVal.textContent = saved; } } catch {}
+nEl.addEventListener('input', () => nVal.textContent = nEl.value);
+nEl.addEventListener('change', () => { try { localStorage.setItem('sf_n', nEl.value); } catch {} if (q.value.trim()) run(); });
 $('#course').addEventListener('change', () => q.value.trim() && run());
 
 async function run() {
@@ -32,7 +36,7 @@ async function run() {
   history.replaceState(null, '', '#' + encodeURIComponent(question));
   status.textContent = 'Searching…'; results.innerHTML = '';
   try {
-    const p = new URLSearchParams({ q: question, course: $('#course').value, mode: $('#mode').value });
+    const p = new URLSearchParams({ q: question, course: $('#course').value, mode: $('#mode').value, n: nEl.value });
     const d = await api('/api/search?' + p);
     render(d);
   } catch (err) { if (err.message !== 'passcode') status.textContent = 'Error: ' + err.message; }
@@ -53,6 +57,13 @@ function render(d) {
         <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}</div>
         <div class="where">${esc(where(s))}</div>
         <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${k === 'said' ? 'what I said' : k}</span>`).join('')}</div>
+        <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
+          <span>score <b>${r.score.toFixed(4)}</b>${r.score !== r.raw_score ? ` <small>(${r.raw_score.toFixed(4)} +${Math.round(d.kind_bonus * 100)}%)</small>` : ''}</span>
+          <span>distance <b>${r.distance == null ? '–' : r.distance.toFixed(3)}</b></span>
+          <span>meaning <b>${r.vec_rank == null ? '–' : '#' + r.vec_rank}</b></span>
+          <span>keyword <b>${r.fts_rank == null ? '–' : '#' + r.fts_rank}</b></span>
+          <span>${r.items} item${r.items === 1 ? '' : 's'} hit</span>
+        </div>
         <div class="why"><b>${whyLabel}:</b> ${esc(w.text || '').replace(/^\[[^\]]*\]\s*/, '')}</div>
       </div></article>`;
   }).join('') || '<p class="empty">Nothing stored yet.</p>';
@@ -75,6 +86,7 @@ async function openSlide(id) {
       <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method}` : ''}</span></div>
       <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
   }).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
+  $('#items').innerHTML = (d.items || []).map(it => `<div class="item"><div class="item-head">${it.kind === 'said' ? 'what I said' : it.kind} · ${esc(it.id)} · ${it.text.split(/\s+/).length} words</div><pre>${esc(it.text)}</pre></div>`).join('') || '<p class="hint">Nothing indexed.</p>';
   $('#notes').innerHTML = d.notes.map(n => `<li>${esc(n.text.replace(/^\[[^\]]*\]\s*/, ''))}</li>`).join('') || '<li class="hint">None yet.</li>';
   $('#slide').showModal();
 }

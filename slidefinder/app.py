@@ -77,13 +77,13 @@ def me(request: Request):
 # ---- search and slides ----------------------------------------------------
 
 @app.get("/api/search", dependencies=[Depends(require_login)])
-def api_search(q: str, course: str | None = None, mode: str = "hybrid"):
+def api_search(q: str, course: str | None = None, mode: str = "hybrid", n: int = 30):
     q = q.strip()[:500]
     if not q:
         raise HTTPException(400, "empty question")
     if mode not in ("hybrid", "vector", "keyword"):
         raise HTTPException(400, "bad mode")
-    return search.search(q, course or None, mode)
+    return search.search(q, course or None, mode, n)
 
 
 @app.get("/api/slide/{slide_id}", dependencies=[Depends(require_login)])

@@ -61,8 +61,8 @@ const termLabel = t => { const m = /^(\d{4})\s+(\w+)\s*(.*)$/.exec(t || ''); ret
 function cardInner(stackTop, i, k) {
   const vs = stackTop.versions || [stackTop], r = vs[k], s = r.slide, w = r.why || {};
   const whyLabel = { card: 'Slide says', said: 'Narration', note: 'My note', desc: 'Image shows' }[w.kind] || '';
-  const tabs = vs.length > 1 ? `<div class="vers" title="Versions of this slide: same text, different course or term">${vs.map((v, j) =>
-      `<button class="ver${j === k ? ' on' : ''}" data-k="${j}">${esc(termLabel(v.slide.term))} · ${esc(v.slide.course_name)}</button>`).join('')}</div>` : '';
+  const tabs = vs.length > 1 ? `<div class="vers" title="This slide was taught in more than one course or term. The filled tab is the version shown; click another to swap it in."><span class="vers-label">Showing</span>${vs.map((v, j) =>
+      `<button class="ver${j === k ? ' on' : ''}" data-k="${j}">${j === k ? '✓ ' : ''}${esc(termLabel(v.slide.term))} · ${esc(v.slide.course_name)}</button>`).join('')}</div>` : '';
   return `${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
       <div class="body">
         <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}${vs.length > 1 ? ` <small class="nver">${vs.length} versions</small>` : ''}</div>

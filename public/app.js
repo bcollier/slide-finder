@@ -60,15 +60,11 @@ let stacks = [];
 const termLabel = t => { const m = /^(\d{4})\s+(\w+)\s*(.*)$/.exec(t || ''); return m ? `${m[2]} ${m[1]}${m[3] ? ' ' + m[3] : ''}` : (t || ''); };
 function cardInner(stackTop, i, k) {
   const vs = stackTop.versions || [stackTop], r = vs[k], s = r.slide, w = r.why || {};
-  const whyLabel = { card: 'Slide says', said: 'Narration', note: 'My note', desc: 'Image shows' }[w.kind] || '';
-  const tabs = vs.length > 1 ? `<div class="vers" title="This slide was taught in more than one course or term. The filled tab is the version shown; click another to swap it in."><span class="vers-label">Showing</span>${vs.map((v, j) =>
-      `<button class="ver${j === k ? ' on' : ''}" data-k="${j}">${j === k ? '✓ ' : ''}${esc(termLabel(v.slide.term))} · ${esc(v.slide.course_name)}</button>`).join('')}</div>` : '';
+    const tabs = '';
   return `${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
       <div class="body">
-        <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}${vs.length > 1 ? ` <small class="nver">${vs.length} versions</small>` : ''}</div>
-        ${tabs}
-        <div class="where">${esc(where(s))}${s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : ''}</div>
-        <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${{ said: 'narration', desc: 'image' }[k] || k}</span>`).join('')}</div>
+        <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}</div>
+        <div class="where">${esc(where(s))}${vs.length > 1 ? ` · <b>also in ${vs.length - 1} other ${vs.length - 1 === 1 ? 'course or term' : 'courses or terms'}</b>` : (s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : '')}</div>
         <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
           <span>score <b>${r.score.toFixed(4)}</b></span>
           <span>distance <b>${r.distance == null ? '–' : r.distance.toFixed(3)}</b></span>
@@ -83,14 +79,15 @@ const evidenceById = {};
 function bestLine(r) {
   const it = (r.evidence || {}).items?.[0], w = r.why || {};
   const best = it && it.sentences && it.sentences.length ? it.sentences.slice().sort((a, b) => a.dist - b.dist)[0] : null;
-  if (best) return `<div class="why"><b>${KIND[it.kind]}:</b> ${esc(best.text)}</div>`;
-  const whyLabel = { card: 'Slide says', said: 'Narration', note: 'My note', desc: 'Image shows' }[w.kind] || '';
+  const LABEL = { card: 'Slide text says', said: 'I said', note: 'My note says', desc: 'The image shows' };
+  if (best) return `<div class="why"><b>${LABEL[it.kind]}:</b> ${esc(best.text)}</div>`;
+  const whyLabel = LABEL[w.kind] || '';
   return `<div class="why"><b>${whyLabel}:</b> ${esc(w.text || '').replace(/^\[[^\]]*\]\s*/, '')}</div>`;
 }
 const STOP = new Set('a an the of to in on for and or is are was were be been how do does did i my we you it this that what which with by as at from into can should would will when where why'.split(' '));
 const stem = w => w.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5);
 let qstems = new Set();
-const KIND = { card: 'slide text', desc: 'image', said: 'narration', note: 'note' };
+const KIND = { card: 'slide text', desc: 'image description', said: 'narration (what I said)', note: 'my note' };
 const ordinal = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : Math.min(n % 10, 4)] || 'th');
 const markWords = t => esc(t).split(' ').map(w => qstems.has(stem(w)) && stem(w).length >= 3 ? `<mark>${w}</mark>` : w).join(' ');
 const closeness = d => Math.max(0, Math.min(1, (0.68 - d) / (0.68 - 0.34)));

@@ -25,41 +25,48 @@ raw decks for every term (phase 2).
 
 | Course | Terms | Deck pages | Unique slides |
 | --- | --- | --- | --- |
-| 45-851 Data Mining | 6 (2023 Fall to 2025 Fall) | 2,210 | 1,169 |
-| 45-885 Data Visualization | 5 (2024 Spring to 2026 Spring) | 2,154 | 799 |
-| 46-887 Machine Learning for Business Applications | 2026 Spring | 317 | 261 |
+| 45-851 Data Mining | 6 (2023 Fall to 2025 Fall) | 2,210 | 879 |
+| 45-885 Data Visualization | 5 (2024 Spring to 2026 Spring) | 2,154 | 725 |
+| 46-887 Machine Learning for Business Applications | 2026 Spring | 317 | 255 |
 | 70-445 AI for Business Leaders | 2026 Fall | 576 | 576 |
 | 45-884 AI Methods for Social and Visual Data | 2026 Fall | 366 | 366 |
-| **Total** | | **5,623** | **3,171** |
+| **Total** | | **5,623** | **2,801** |
 
 **Repeated slides are stored once.** The same slide comes back term after term, often with a
 word or the year changed. Without merging, the top ten results would be one k-means slide six
-times. Two pages count as the same slide when any of these holds:
-- their text is identical;
-- their text embeddings are at least 0.95 similar and the images look alike (a 64-bit image
-  hash within 10 bits);
-- they are picture-only pages with near-identical images.
+times. A hash of the whole rendered page is not enough: every term gets a new deck template,
+so the same slide renders differently each year, and the first version of the index kept one
+copy per template. What survives a template change is the picture, so each picture embedded in a
+page is hashed from the image file itself. Two pages count as the same slide when any of these holds:
+- their text is identical and their pictures are the same (or neither has a picture and the
+  pages look alike); identical text of 25 or more words counts on its own;
+- their text embeddings are at least 0.95 similar and either the whole pages look alike or,
+  across terms, the pictures are the same;
+- they are picture-only pages with the same picture and the same few words.
 
-That merged 2,452 pages into slides from other sessions. The newest copy is the one indexed, and
-every session that used it is listed: 1,067 slides were used more than once, and one Data
-Visualization slide was used in 25 sessions.
+The pictures have to match as a set, so the steps of a build-up sequence (each adding a figure)
+stay separate, and so does a stock picture reused under different titles.
+
+That merged 2,822 pages into slides from other sessions. The newest copy is the one indexed, and
+every session that used it is listed: 1,096 slides were used more than once, and one Data
+Mining opener was used in 28 sessions.
 
 **What one item is.** The unit I want back is a slide, but each slide is stored as several
 searchable items, each with its own embedding:
 
 | Item | What its text is | Count |
 | --- | --- | --- |
-| card | Course, session, slide number and title, then the slide's own text and speaker notes | 3,171 |
-| image description | 60 to 90 words from a vision model (Claude Haiku 4.5) on what the slide shows: the chart and what it plots, the diagram, the code, the photo. This is what makes picture-only slides findable. | 3,171 |
-| what I said | About 120 words of what I said while the slide was on screen, split on sentence boundaries | 2,305 |
+| card | Course, session, slide number and title, then the slide's own text and speaker notes | 2,801 |
+| image description | 60 to 90 words from a vision model (Claude Haiku 4.5) on what the slide shows: the chart and what it plots, the diagram, the code, the photo. This is what makes picture-only slides findable. | 2,801 |
+| what I said | About 120 words of what I said while the slide was on screen, split on sentence boundaries | 2,298 |
 | note | Anything I add from the page ("used this in the Deloitte workshop") | added at runtime |
 
-That is 8,647 searchable items. Search matches items, then merges them back into slides.
+That is 7,900 searchable items. Search matches items, then merges them back into slides.
 
-**What I said, and how sure it is.** 1,039 slides have what I said attached:
+**What I said, and how sure it is.** 1,032 slides have what I said attached:
 - 713 slides in the two Fall 2026 courses were matched by video: frames from the recording
   were compared with the slide images, so the times are when the slide was actually on screen.
-- 326 slides in the older courses were matched by text. My lines were cut into 45-second
+- 319 slides in the older courses were matched by text. My lines were cut into 45-second
   windows and each window was assigned to the slide it most resembles, in order through the
   deck. The page labels these "lower confidence". They cover Data Mining 2023 Fall and 2024
   Spring, Data Visualization 2024 Spring and 2026 Spring, and one Machine Learning session.
@@ -142,15 +149,14 @@ away from the concept miss; see `eval/step5_distances.md`.
 ## 5. Retrieval scores
 
 Measured with `eval/run.py` on 28 labeled questions from two courses (private file; aggregates
-only here), searching within the question's course. Index at the time: 3,171 slides, 7,904 items (before
-the text-matched transcripts were added; it now has 8,647).
+only here), searching within the question's course. Final index: 2,801 slides, 7,900 items.
 
 | Mode | hit@1 | hit@5 | recall@10 | MRR | off-topic flagged |
 | --- | --- | --- | --- | --- | --- |
-| hybrid (meaning + keywords), all item kinds | 0.64 | 0.86 | 0.74 | 0.73 | 6/6 |
-| meaning only | 0.64 | 0.86 | 0.74 | 0.74 | 6/6 |
+| hybrid (meaning + keywords), all item kinds | 0.68 | 0.86 | 0.74 | 0.76 | 6/6 |
+| meaning only | 0.68 | 0.86 | 0.74 | 0.77 | 6/6 |
 | keywords only | 0.04 | 0.04 | 0.04 | 0.04 | 6/6 |
-| hybrid without the image descriptions | 0.64 | 0.86 | 0.75 | 0.74 | 6/6 |
+| hybrid without the image descriptions | 0.68 | 0.86 | 0.75 | 0.77 | 6/6 |
 
 Earlier in the day, on the first index (two courses, 942 slides, no descriptions, no course filter):
 
@@ -172,6 +178,8 @@ What the numbers say:
   through its description, and that slide had no text to match before.
 - Scores dipped between the two runs as the index grew from 942 to 3,171 slides and the top-50
   candidate pool got more crowded; filtering to the course brought off-topic flagging to 6/6.
+- Regrouping repeated slides by their embedded pictures (3,171 to 2,801 slides) raised hit@1
+  from 0.64 to 0.68: one slide no longer fills several result slots with its own copies.
 - Misses in every mode: "what is MCP in plain english" and "how do I evaluate whether my RAG
   chatbot is giving good answers" (the relevant slides are code screenshots). Metaphors also
   miss: "the model said yes but it was actually no" never reaches the confusion-matrix slides
@@ -580,29 +588,29 @@ Counts read from the live database on October 26, 2026:
 
 | Course | Loaded by | Unique slides | Slides used in more than one session |
 | --- | --- | --- | --- |
-| 45-851 Data Mining (6 terms) | `archive.py` + `load_archive.py` | 1,169 | 441 |
-| 45-885 Data Visualization (5 terms) | `archive.py` + `load_archive.py` | 799 | 575 |
+| 45-851 Data Mining (6 terms) | `archive.py` + `load_archive.py` | 879 | 484 |
+| 45-885 Data Visualization (5 terms) | `archive.py` + `load_archive.py` | 725 | 555 |
 | 70-445 AI for Business Leaders (2026 Fall) | `load.py` | 576 | 0 |
 | 45-884 AI Methods for Social and Visual Data (2026 Fall) | `load.py` | 366 | 0 |
-| 46-887 Machine Learning for Business Applications (2026 Spring) | `archive.py` + `load_archive.py` | 261 | 51 |
-| **Total** | | **3,171** | **1,067** |
+| 46-887 Machine Learning for Business Applications (2026 Spring) | `archive.py` + `load_archive.py` | 255 | 57 |
+| **Total** | | **2,801** | **1,096** |
 
 | Table or kind | Rows |
 | --- | --- |
-| `sf_slides` | 3,171 (all 3,171 have a description) |
-| `sf_items` | 8,647 |
-| `card` items | 3,171 |
-| `desc` items | 3,171 |
-| `said` items | 2,305 |
+| `sf_slides` | 2,801 (all 2,801 have a description) |
+| `sf_items` | 7,900 |
+| `card` items | 2,801 |
+| `desc` items | 2,801 |
+| `said` items | 2,298 |
 | `note` items | 0 |
-| `sf_occurrences` | 1,052, on 1,039 slides (13 slides have what was said in two terms) |
+| `sf_occurrences` | 1,055, on 1,032 slides (23 slides have what was said in two or more terms) |
 | by video frames, high confidence | 675 |
 | by video frames, medium | 11 |
 | by text, medium (phase 1, mostly text-matched) | 27 |
-| by text, low (`align_text.py`) | 339 |
+| by text, low (`align_text.py`) | 342 |
 | `sf_picks` | 2 |
 
-The most reused slide (a Data Visualization opener) lists 25 sessions in `used_in`.
+The most reused slide (a Data Mining opener) lists 28 sessions in `used_in`.
 
 ### D.9 One slide, all of its rows
 
@@ -789,7 +797,7 @@ flowchart TB
     OPEN --> NOTES["speaker notes from the pptx (python-pptx),<br/>skipping hidden slides,<br/>dropped if the count differs from the PDF pages"]
     NOTES --> PG["for each page"]
     PG --> RENDER["render at 1600 px wide, save WebP q80<br/>and a 400 px thumbnail q75 (only if missing)"]
-    RENDER --> ROW["row: ids, term, session, date, title, text, notes,<br/>64-bit dHash of the image,<br/>text_hash = sha1 of lower-cased, space-collapsed text (16 hex)"]
+    RENDER --> ROW["row: ids, term, session, date, title, text, notes,<br/>64-bit dHash of the page,<br/>pics = 256-bit dHash of each embedded picture covering 6%+ of the page,<br/>drawings = count of vector paths,<br/>text_hash = sha1 of lower-cased, space-collapsed text (16 hex)"]
     ROW --> PG
     PG -- "deck done" --> L
     L -- "all sessions" --> OUT(["write build/{course}.jsonl"])
@@ -797,7 +805,10 @@ flowchart TB
 
 The difference hash (`dhash`) shrinks the page to 9 × 8 grey pixels and records, for each of the
 64 neighbouring pairs, whether the left pixel is brighter than the right. Similar-looking pages
-have hashes that differ in few bits (Hamming distance).
+have hashes that differ in few bits (Hamming distance). The same hash at 17 × 16 (256 bits) is
+taken of each picture embedded in the page, read from the image file rather than the rendered
+page, so a picture keeps its hash when the slide moves to a new term's template. Near-flat
+pictures (tints, overlays, placeholders) are ignored, since they look alike everywhere.
 
 ### G.4 Merging repeated slides (`load_archive.py`)
 
@@ -807,18 +818,23 @@ puts A, B and C together) when any rule holds:
 
 | Rule | Applies to | Joined when |
 | --- | --- | --- |
-| A. Same text | Pages with at least 5 words | Same `text_hash`, and either the images are within 12 bits (64-bit dHash) or the page has 25 or more words (then the template may have changed) |
-| B. Same meaning and look | Both pages with at least 5 words | Card embeddings have cosine similarity ≥ 0.95 **and** images within 10 bits |
-| C. Same picture | Both pages with fewer than 5 words | 256-bit dHash of the thumbnails (17 × 16 grey) within 6 bits |
+| A. Same text | Pages with at least 5 words | Same `text_hash`, and the same pictures (largest picture within 24 of 256 bits and every picture matched on both sides), or no pictures on either page and the pages within 12 bits or similar drawing counts; 25 or more words counts on its own |
+| B. Same meaning and look | Both pages with at least 5 words | Card embeddings have cosine similarity ≥ 0.95 **and** either the pages are within 10 bits with the pictures not contradicting, or (across terms, not on a title slide) the same pictures |
+| C. Same picture | Both pages with fewer than 5 words | Same `text_hash` and the same pictures, or 256-bit dHash of the thumbnails (17 × 16 grey) within 6 bits |
+
+Pictures match as a set (same count, largest the same, each matched), so a page that adds a
+figure (a build-up step) and a stock picture under different titles both stay separate. The
+24-bit threshold comes from the data: identical-text pairs across terms have picture distances
+under 24 bits (re-encoded copies) or over 40 (different pictures), with nothing in between.
 
 ```mermaid
 flowchart TB
     start([load_archive.py COURSE]) --> R["read build/{course}.jsonl"]
     R --> E["card text per page, embed all (Voyage)"]
-    E --> HM["pairwise Hamming distances of the 64-bit hashes"]
-    HM --> A["rule A: group by text_hash, union"]
-    A --> B["rule B: cosine similarity matrix of cards,<br/>union pairs with sim ≥ 0.95 and Hamming ≤ 10"]
-    B --> C["rule C: 256-bit hashes for picture-only pages,<br/>union pairs within 6 bits"]
+    E --> HM["pairwise Hamming distances of the 64-bit page hashes;<br/>usable picture hashes per page"]
+    HM --> A["rule A: group by text_hash,<br/>union pairs with the same pictures (or 25+ words)"]
+    A --> B["rule B: cosine similarity matrix of cards,<br/>union pairs with sim ≥ 0.95 and (page Hamming ≤ 10 or, across terms, same pictures)"]
+    B --> C["rule C: picture-only pages,<br/>union pairs with the same pictures and text, or thumbnails within 6 bits"]
     C --> G["groups = union-find roots"]
     G --> CAN["per group: sort by term (chronological), session, page, newest first,<br/>the first is the canonical copy,<br/>used_in = each 'term · session N', newest first"]
     CAN --> DEL["DELETE the course's sf_slides (cascades)"]
@@ -1232,7 +1248,8 @@ the server is HTML-escaped before it is inserted into the page.
 | `match_count` | max(60, 4n) | `search.py` | Candidates per side. |
 | `IMAGE_WIDTH`, `THUMB_WIDTH` | 1600, 400 px | `archive.py` | Rendered sizes. |
 | `SIM`, `HAMMING` | 0.95, 10 bits | `load_archive.py` | Rule B for repeated slides. |
-| Rule A, C thresholds | 12 bits / 25 words; 6 of 256 bits | `load_archive.py` | Rules A and C. |
+| `PIC_BITS` | 24 of 256 bits | `load_archive.py` | Two embedded pictures this close are the same picture. |
+| Rule A, C thresholds | 12 bits / 25 words / 25 drawings; 6 of 256 bits | `load_archive.py` | Rules A and C. |
 | `MODEL` | `claude-haiku-4-5-20251001` | `describe.py` | Vision model. |
 | `COST_PER_SLIDE`, `COST_CAP` | $0.0025, $15 | `describe.py` | Cost guard before describing. |
 | `WINDOW_SECONDS`, `MIN_WINDOW_WORDS` | 45 s, 25 words | `align_text.py` | Transcript windows. |

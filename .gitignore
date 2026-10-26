@@ -1,0 +1,11 @@
+# Built locally from the lecture archive; never committed
+chroma_store/
+build/
+cache/
+data/
+*.pdf
+*.pptx
+.env
+.venv/
+__pycache__/
+.DS_Store

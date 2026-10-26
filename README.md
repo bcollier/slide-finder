@@ -54,21 +54,40 @@ it as being about exams. See `eval/step5_distances.md`.
 
 ## 5. Retrieval scores
 
-Measured with `eval/run.py` on 28 labeled questions (private; aggregates only here):
+Measured with `eval/run.py` on 28 labeled questions from two courses (private file; aggregates
+only here), searching within the question's course. Final index: 3,171 slides, 7,904 items.
 
 | Mode | hit@1 | hit@5 | recall@10 | MRR | off-topic flagged |
 | --- | --- | --- | --- | --- | --- |
-| hybrid (meaning + keywords) | 0.68 | 0.96 | 0.80 | 0.78 | 4/6 |
-| meaning only | 0.57 | 0.93 | 0.78 | 0.73 | 4/6 |
-| keywords only | 0.07 | 0.07 | 0.04 | 0.07 | 6/6 |
+| hybrid (meaning + keywords), all item kinds | 0.64 | 0.86 | 0.74 | 0.73 | 6/6 |
+| meaning only | 0.64 | 0.86 | 0.74 | 0.74 | 6/6 |
+| keywords only | 0.04 | 0.04 | 0.04 | 0.04 | 6/6 |
+| hybrid without the image descriptions | 0.64 | 0.86 | 0.75 | 0.74 | 6/6 |
+
+Earlier in the day, on the first index (two courses, 942 slides, no descriptions, no course filter):
+
+| Mode | hit@1 | hit@5 | recall@10 | MRR | off-topic flagged |
+| --- | --- | --- | --- | --- | --- |
+| hybrid | 0.68 | 0.96 | 0.80 | 0.78 | 4/6 |
 | hybrid with a 15% bonus for slides matched by both card and transcript (the first version) | 0.57 | 0.93 | 0.78 | 0.72 | 4/6 |
 
-What the numbers say: the bonus I had added by intuition made ranking worse, so it is off.
-Keywords alone are nearly useless on these questions because Postgres requires every word of the
-question to appear, and real questions are long; the keyword side only contributes on short
-queries with exact terms, which is what it is for. Two off-topic questions slip past the 0.55
-cutoff. The one question missed in every mode asks how to evaluate a RAG chatbot; the relevant
-slides are code-heavy and will need the image descriptions.
+What the numbers say:
+
+- The "matched by two kinds" bonus I had added by intuition made ranking worse (hit@1 0.57 vs
+  0.68), so it is off. Measuring it was the point.
+- Keywords alone are nearly useless on these questions: Postgres requires every word of the
+  question to appear, and real questions are long. The keyword side only helps on short queries
+  with exact terms ("SMOTE", "mtry"), which is what it is kept for.
+- The image descriptions do not move these metrics; the labeled questions are about concepts
+  the slide text already states. They are what make picture-only slides findable at all: "how
+  do I pick colors for a chart" now returns a figure-only slide from *The Big Book of Dashboards*
+  through its description, and that slide had no text to match before.
+- Scores dipped between the two runs as the index grew from 942 to 3,171 slides and the top-50
+  candidate pool got more crowded; filtering to the course brought off-topic flagging to 6/6.
+- Misses in every mode: "what is MCP in plain english" and "how do I evaluate whether my RAG
+  chatbot is giving good answers" (the relevant slides are code screenshots). Metaphors also
+  miss: "the model said yes but it was actually no" never reaches the confusion-matrix slides
+  (rank 40), while "it flagged a customer as a churner but they stayed" gets them to rank 22.
 
 ## 6. Stack, and running your own copy
 

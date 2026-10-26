@@ -172,5 +172,8 @@ with a list of every term that used it.
 
 ## 7. Evaluation
 
-`eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in
-three modes. Results are in the README.
+`eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three
+modes, with and without the image descriptions. Three runs during the day: the first showed my
+"two kinds matched" bonus hurt and it came out; the second, after loading three more courses,
+dropped because Data Mining now holds the same clustering material as the labeled course, so the
+third run filters to the question's course. Results and what they mean are in the README.

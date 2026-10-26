@@ -23,7 +23,10 @@ only). What one item is: a slide has several items, a "card" (deck, session, tit
 speaker notes), a description of the image written by a vision model, ~120-word chunks of what I
 said over it, and notes I add. How many: 3,171 unique
 slides from 5,900 deck pages (five courses, every term since Fall 2023; 2,729 pages were repeats of a
-slide from another term), 7,904 searchable items (3,171 cards, 3,171 image descriptions, 1,562 transcript chunks). Metadata: course, term, session, slide number, which terms
+slide from another term), 8,647 searchable items (3,171 cards, 3,171 image descriptions, 2,305 transcript chunks). What I said
+is attached to 1,039 slides: 739 from video-matched recordings (two Fall 2026 courses) and 300 from
+text-matched recordings (Data Mining 2023 Fall and 2024 Spring, Data Visualization, one ML session),
+which the page labels "lower confidence". Metadata: course, term, session, slide number, which terms
 used the slide. Repeated slides across terms are grouped into one.]
 
 ## 3. Adding and searching

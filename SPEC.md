@@ -151,8 +151,14 @@ This dataset is from one term only, so phase 1 builds the per-slide transcript v
 **Phase 2 (done Oct 26 for decks; transcripts later): the raw archive.** Decks from every term,
 using the pipeline below. Loaded Oct 26: 45-851 (2,210 pages → 1,169 unique slides, 6 terms),
 45-885 (2,154 → 799, 5 terms), 46-887 (317 → 261). Index total: 3,171 unique slides, 7,904 items (every slide has a vision-written description as its own `desc` item).
-Transcripts and video alignment for these courses are the next step; the loader writes the same
-record shape as phase 1, so search, history and the page don't change.
+Transcripts for these courses were attached Oct 26 by the **text fallback** (`align_text.py`):
+260 Data Mining occurrences from 14 sessions in two terms, 88 Data Visualization, 2 ML. The method:
+instructor-only cues in 45-second windows, embedded and compared with each slide's card plus
+image description, double-centered (generic slides must not win every window), a soft time
+prior, then an in-order assignment that charges for jumps and for going back. Only 13 slides have
+what-I-said from more than one term so far: the 2024 Spring live-session decks are short recaps
+that share few slides with the 2023 Fall lecture decks. More terms need the untranscribed
+recordings (Data Mining 2024 Fall, 2025 Spring). Video-frame alignment is still the next step.
 
 ### Raw archive (phase 2)
 

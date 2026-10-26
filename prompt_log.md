@@ -170,6 +170,20 @@ archive (PyMuPDF, LibreOffice for pptx-only decks), pulls text and speaker notes
 `slidefinder/load_archive.py` groups near-duplicate slides across terms before loading one copy
 with a list of every term that used it.
 
+## 6b. Attaching what I said to old decks (2:30 PM)
+
+No video alignment existed for Data Mining, so the agent built the text fallback from the spec:
+my lines only (the de-identified transcripts label speakers), 45-second windows, matched in order
+to the deck. The first dry run on Clustering I (2023 Fall) was wrong in an instructive way: every
+window-to-slide similarity sat between 0.63 and 0.91, one generic slide collected the first 40
+minutes, and slides 1 to 29 got nothing. Two causes, two fixes. Document-to-document cosines are
+uniformly high, so the matrix is double-centered (subtract each window's and each slide's mean).
+And slides 1 to 29 were picture-only (the spaghetti-sauce story told over photos), so the slide
+side now embeds the card plus its image description. A soft time prior (a window at 30% of the
+lecture should be near 30% of the deck) settled the rest. Result on that session: 81 of 134
+windows placed on 32 of 55 slides, in deck order. Windows that match nothing (admin, Q&A) are
+dropped rather than forced onto a slide.
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

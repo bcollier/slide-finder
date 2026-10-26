@@ -20,9 +20,9 @@ what I said about them, across every term, when building a new deck.]
 [Where the data came from (my lecture archive; phase 1 used the slide images, text and
 de-identified transcript alignments I had already processed for Faculty Twin, as input data
 only). What one item is: a slide has several items, a "card" (deck, session, title, slide text,
-speaker notes), ~120-word chunks of what I said over it, and notes I add. How many: 942 slides
-and 2,504 items from two Fall 2026 courses, then Data Mining, Data Visualization and ML for
-Business from every term since 2023. Metadata: course, term, session, slide number, which terms
+speaker notes), ~120-word chunks of what I said over it, and notes I add. How many: 3,171 unique
+slides from 5,900 deck pages (five courses, every term since Fall 2023; 2,729 pages were repeats of a
+slide from another term), 4,733 searchable items. Metadata: course, term, session, slide number, which terms
 used the slide. Repeated slides across terms are grouped into one.]
 
 ## 3. Adding and searching

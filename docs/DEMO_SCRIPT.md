@@ -34,4 +34,4 @@ are doing as you go; the graders use the video to check the requirements.
 8. **Persistence.** Reload the page: the note and the picks are still there. (5 s)
 
 Mention once: Supabase Postgres with pgvector, Voyage embeddings, FastAPI on Vercel; about
-N unique slides from five courses and every term since 2023; code and README on GitHub.
+3,200 unique slides from five courses and every term since 2023; code and README on GitHub.

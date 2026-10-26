@@ -96,7 +96,7 @@ def api_slide(slide_id: str):
 
 @app.get("/api/courses", dependencies=[Depends(require_login)])
 def api_courses():
-    rows = db.select("sf_slides", {"select": "course,course_name,term", "order": "course"})
+    rows = db.select("sf_slides", {"select": "course,course_name,term", "order": "course", "limit": "100000"})  # PostgREST caps at 1000 by default
     seen = {}
     for r in rows:
         seen.setdefault(r["course"], {"course": r["course"], "course_name": r["course_name"], "terms": set()})

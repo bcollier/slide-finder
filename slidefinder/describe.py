@@ -85,6 +85,7 @@ def main() -> None:
     p.add_argument("--limit", type=int)
     p.add_argument("--yes", action="store_true", help="skip the cost confirmation")
     p.add_argument("--workers", type=int, default=6)
+    p.add_argument("--refold", action="store_true", help="rewrite desc items and cards for every described slide")
     args = p.parse_args()
 
     import anthropic
@@ -121,28 +122,41 @@ def main() -> None:
                 print(f"  {done}/{len(todo)} {time.time() - t:.0f}s", file=sys.stderr)
     print(f"described {done} in {time.time() - t:.0f}s")
 
-    # Fold descriptions into the slide rows and re-embed the cards.
-    pending = [s for s in slides if not s["description"] and s["slide_id"] in cache]
+    fold(slides, cache, refold=args.refold)
+
+
+def desc_text(s: dict, description: str) -> str:
+    head = f"{s['course_name']}, {s['session_title']}, slide {s['slide_number']}"
+    return f"{head}: {s['title']}\n{description}" if s["title"] else f"{head}\n{description}"
+
+
+def fold(slides: list[dict], cache: dict[str, str], refold: bool = False) -> None:
+    """Store each description on its slide row and as its own `desc` item. The card stays the slide's
+    own text and notes (an early version appended the description to the card; that diluted it)."""
+    pending = [s for s in slides if s["slide_id"] in cache and (refold or not s["description"])]
     if not pending:
         return
-    cards = [card_text(s["course_name"], s["session_title"], s["slide_number"], s["title"], s["text"], s["notes"],
-                       cache[s["slide_id"]]) for s in pending]
-    vecs = embed.embed_documents(cards, progress=lambda d, n: print(f"  embedded {d}/{n}", file=sys.stderr))
-    for i in range(0, len(pending), 200):
-        chunk = pending[i:i + 200]
-        db.upsert("sf_slides", [{"slide_id": s["slide_id"], "description": cache[s["slide_id"]]} for s in chunk], on_conflict="slide_id") if False else None
-        for s in chunk:  # PostgREST upsert needs full rows; patch one column instead
+    terms = {}
+    ids = [s["slide_id"] for s in pending]
+    for i in range(0, len(ids), 200):
+        for r in db.select("sf_slides", {"select": "slide_id,term", "slide_id": f"in.({','.join(ids[i:i + 200])})"}):
+            terms[r["slide_id"]] = r["term"]
+    descs = [desc_text(s, cache[s["slide_id"]]) for s in pending]
+    cards = [card_text(s["course_name"], s["session_title"], s["slide_number"], s["title"], s["text"], s["notes"]) for s in pending]
+    log = lambda d, n: print(f"  embedded {d}/{n}", file=sys.stderr)
+    dvec = embed.embed_documents(descs, progress=log)
+    cvec = embed.embed_documents(cards, progress=log) if refold else None
+    items = [{"id": f"{s['slide_id']}-desc-0", "slide_id": s["slide_id"], "kind": "desc", "term": terms.get(s["slide_id"], ""),
+              "occurrence_id": None, "text": t, "embedding": v} for s, t, v in zip(pending, descs, dvec)]
+    if refold:
+        items += [{"id": f"{s['slide_id']}-card-0", "slide_id": s["slide_id"], "kind": "card", "term": terms.get(s["slide_id"], ""),
+                   "occurrence_id": None, "text": t, "embedding": v} for s, t, v in zip(pending, cards, cvec)]
+    db.upsert("sf_items", items, batch=100)
+    for s in pending:
+        if s["description"] != cache[s["slide_id"]]:
             db._check(db._client.patch("/rest/v1/sf_slides", params={"slide_id": f"eq.{s['slide_id']}"},
                                        json={"description": cache[s["slide_id"]]}, headers={"Prefer": "return=minimal"}))
-    items = [{"id": f"{s['slide_id']}-card-0", "slide_id": s["slide_id"], "kind": "card", "term": None,
-              "occurrence_id": None, "text": c, "embedding": v} for s, c, v in zip(pending, cards, vecs)]
-    terms = {r["slide_id"]: r["term"] for r in db.select("sf_slides", {"select": "slide_id,term",
-             "slide_id": f"in.({','.join(s['slide_id'] for s in pending)})"})} if len(pending) < 300 else None
-    for it in items:
-        it["term"] = (terms or {}).get(it["slide_id"]) or next(
-            (r["term"] for r in db.select("sf_slides", {"select": "term", "slide_id": f"eq.{it['slide_id']}"})), "")
-    db.upsert("sf_items", items, batch=100)
-    print(f"updated {len(pending)} slides and re-embedded their cards")
+    print(f"stored {len(pending)} descriptions as desc items" + (" and reset their cards" if refold else ""))
 
 
 if __name__ == "__main__":

@@ -19,12 +19,16 @@ MAX_SLIDES = 100
 KIND_BONUS = 0.0
 
 
-def search(question: str, course: str | None = None, mode: str = "hybrid", n: int = TOP_SLIDES) -> dict:
+def search(question: str, course: str | None = None, mode: str = "hybrid", n: int = TOP_SLIDES,
+           kinds: set[str] | None = None) -> dict:
+    """kinds: restrict to these item kinds (used by the eval to measure what each kind adds)."""
     n = max(1, min(int(n), MAX_SLIDES))
     qvec = embed.embed_query(question)
     hits = db.rpc("sf_search", {
         "query_embedding": qvec, "query_text": question, "match_count": max(60, n * 4), "course_filter": course,
     })
+    if kinds:
+        hits = [h for h in hits if h["kind"] in kinds]
     if mode == "vector":
         hits = [h for h in hits if h["vec_rank"] is not None]
         hits.sort(key=lambda h: h["vec_rank"])
@@ -85,7 +89,7 @@ def slide_detail(slide_id: str) -> dict | None:
     occ = db.select("sf_occurrences", {"slide_id": f"eq.{slide_id}", "order": "term.desc"})
     items = db.select("sf_items", {"slide_id": f"eq.{slide_id}", "select": "id,kind,term,text,created_at",
                                    "order": "id"})
-    order = {"card": 0, "said": 1, "note": 2}
+    order = {"card": 0, "desc": 1, "said": 2, "note": 3}
     items.sort(key=lambda i: (order.get(i["kind"], 9), i["id"]))
     notes = [i for i in items if i["kind"] == "note"]
     urls = db.signed_urls([p for p in (r.get("image_path"), r.get("thumb_path")) if p])

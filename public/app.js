@@ -50,13 +50,13 @@ function render(d) {
     : `${n} slide${n === 1 ? '' : 's'}` + (d.best_distance != null ? ` · best distance ${d.best_distance.toFixed(2)}` : '');
   results.innerHTML = d.results.map((r, i) => {
     const s = r.slide, w = r.why || {};
-    const whyLabel = { card: 'Slide says', said: 'I said', note: 'My note' }[w.kind] || '';
+    const whyLabel = { card: 'Slide says', said: 'I said', note: 'My note', desc: 'Image shows' }[w.kind] || '';
     return `<article class="hit" data-id="${esc(s.slide_id)}">
       ${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
       <div class="body">
         <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}</div>
         <div class="where">${esc(where(s))}${s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : ''}</div>
-        <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${k === 'said' ? 'what I said' : k}</span>`).join('')}</div>
+        <div class="kinds">${r.kinds.map(k => `<span class="kind ${k}">${{ said: 'what I said', desc: 'image' }[k] || k}</span>`).join('')}</div>
         <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
           <span>score <b>${r.score.toFixed(4)}</b>${r.score !== r.raw_score ? ` <small>(${r.raw_score.toFixed(4)} +${Math.round(d.kind_bonus * 100)}%)</small>` : ''}</span>
           <span>distance <b>${r.distance == null ? '–' : r.distance.toFixed(3)}</b></span>
@@ -86,7 +86,7 @@ async function openSlide(id) {
       <span>${t}${mins ? ` · ${Math.round(mins / 60)} min on screen` : ''}${o.method ? ` · matched by ${o.method === 'frame' ? 'video' : o.method}` : ''}</span></div>
       <p>${esc(o.transcript)}</p><button class="more">Show all</button></div>`;
   }).join('') : '<p class="hint">No recording matched to this slide yet.</p>';
-  $('#items').innerHTML = (d.items || []).map(it => `<div class="item"><div class="item-head">${it.kind === 'said' ? 'what I said' : it.kind} · ${esc(it.id)} · ${it.text.split(/\s+/).length} words</div><pre>${esc(it.text)}</pre></div>`).join('') || '<p class="hint">Nothing indexed.</p>';
+  $('#items').innerHTML = (d.items || []).map(it => `<div class="item"><div class="item-head">${{ said: 'what I said', desc: 'image description' }[it.kind] || it.kind} · ${esc(it.id)} · ${it.text.split(/\s+/).length} words</div><pre>${esc(it.text)}</pre></div>`).join('') || '<p class="hint">Nothing indexed.</p>';
   $('#notes').innerHTML = d.notes.map(n => `<li>${esc(n.text.replace(/^\[[^\]]*\]\s*/, ''))}</li>`).join('') || '<li class="hint">None yet.</li>';
   $('#slide').showModal();
 }

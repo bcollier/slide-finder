@@ -46,10 +46,90 @@
     <span class="field pageno" aria-hidden="true">Entries <span class="val">2,801 slides</span></span>
   </div>
 
+  <figure class="figcard story" style="--rot:-.4deg" aria-labelledby="story-cap">
+    <span class="tape tl"></span><span class="tape tr"></span>
+    <svg class="fig story-svg" viewBox="0 0 1000 262" role="img" aria-label="How Slide Finder works: a question is compared with every text attached to a slide, its own text and notes, an AI description of its picture, what I said while it was on screen, and the keywords stemmed from all of them, and the slides come back ranked by their closest text.">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#b8352a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2447a6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      </defs>
+      <!-- 1. the question -->
+      <text x="22" y="22" class="step">1 · a question</text>
+      <path d="M22 44 h190 a6 6 0 0 1 6 6 v58 a6 6 0 0 1 -6 6 h-144 l-16 16 l2 -16 h-32 a6 6 0 0 1 -6 -6 v-58 a6 6 0 0 1 6 -6 z" fill="#fffefa" stroke="#1d2633" stroke-width="1.4" stroke-linejoin="round"/>
+      <text x="36" y="72" class="q">how does a computer</text>
+      <text x="36" y="96" class="q">read a photo?</text>
+      <text x="22" y="150" class="axl">embedded once: one point in meaning space,</text>
+      <text x="22" y="163" class="axl">and stemmed once for the keyword search</text>
+      <text x="22" y="196" class="hand" fill="#2447a6">meaning: cosine distance, lower is closer</text>
+      <text x="22" y="216" class="hand" fill="#2e7d4f">keywords: every word must appear, weight 0.5×</text>
+      <text x="22" y="244" class="axl">score = 1/(60+meaning rank) + 0.5/(60+keyword rank)</text>
+      <!-- question to slide -->
+      <path d="M222 82 C 250 82, 262 82, 286 82" fill="none" stroke="#b8352a" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+      <text x="254" y="72" class="dist" text-anchor="middle">compared</text>
+      <text x="254" y="100" class="dist" text-anchor="middle">with each</text>
+      <!-- 2. one slide and its texts -->
+      <text x="296" y="22" class="step">2 · one slide, four texts</text>
+      <rect x="296" y="50" width="100" height="64" fill="#fffefa" stroke="#1d2633" stroke-width="1.2"/>
+      <rect x="302" y="56" width="54" height="5" fill="#1d2633" opacity=".8"/>
+      <rect x="302" y="67" width="38" height="38" fill="#e9dfc4" stroke="#1d2633" stroke-width=".8"/>
+      <path d="M305 103 l9 -13 l7 8 l6 -16 l11 21 z" fill="#8ed3c7" stroke="#1d2633" stroke-width=".7"/>
+      <circle cx="333" cy="73" r="3.2" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/>
+      <g fill="none" stroke="#1d2633" stroke-width=".6" opacity=".75"><path d="M346 67 h44 M346 75 h44 M346 83 h44 M346 91 h44 M346 99 h44 M353 67 v32 M360 67 v32 M367 67 v32 M374 67 v32 M381 67 v32"/></g>
+      <text x="348" y="73" class="tiny">12 40 90 7 3</text><text x="348" y="81" class="tiny">0 255 14 88</text><text x="348" y="89" class="tiny">63 9 0 201 5</text><text x="348" y="97" class="tiny">8 77 130 2 0</text>
+      <text x="346" y="128" class="axl" text-anchor="middle">Images are Numbers</text>
+      <!-- brace from the slide to its four texts -->
+      <path d="M398 82 h10 M408 46 v150 M408 46 h10 M408 100 h10 M408 154 h10 M408 196 h10" fill="none" stroke="#1d2633" stroke-width="1" opacity=".55"/>
+      <g class="card">
+        <rect x="420" y="30" width="250" height="36" fill="#fffefa" stroke="#2447a6" stroke-width="1.2"/>
+        <text x="428" y="43" class="lab" fill="#2447a6">slide text + speaker notes</text>
+        <text x="428" y="57" class="snip">Images are Numbers. Regression: the output…</text>
+        <text x="662" y="43" class="dist" text-anchor="end">0.54</text>
+        <rect x="420" y="84" width="250" height="36" fill="#fffefa" stroke="#7b4fa3" stroke-width="1.2"/>
+        <text x="428" y="97" class="lab" fill="#7b4fa3">AI description of the picture</text>
+        <text x="428" y="111" class="snip">A photo of a cat beside a grid of pixel values…</text>
+        <text x="662" y="97" class="dist" text-anchor="end">0.53</text>
+        <rect x="420" y="138" width="250" height="36" fill="#fff4f2" stroke="#b8352a" stroke-width="1.8"/>
+        <text x="428" y="151" class="lab" fill="#b8352a">narration · what I said</text>
+        <text x="428" y="165" class="snip">Ultimately, images are numbers. So behind…</text>
+        <text x="662" y="151" class="dist best" text-anchor="end">0.46 closest</text>
+        <rect x="420" y="192" width="250" height="36" fill="#fffefa" stroke="#2e7d4f" stroke-width="1.2"/>
+        <text x="428" y="205" class="lab" fill="#2e7d4f">keywords, stemmed from all</text>
+        <text x="428" y="219" class="snip">imag · number · pixel · classif · cat · photo</text>
+        <text x="662" y="205" class="dist" text-anchor="end" fill="#2e7d4f">✓ photo</text>
+      </g>
+      <text x="420" y="248" class="axl">each text is its own item, matched on its own; the closest speaks for the slide</text>
+      <!-- 3. ranked -->
+      <path d="M676 156 C 715 156, 730 130, 762 122" fill="none" stroke="#2447a6" stroke-width="1.6" marker-end="url(#ahb)"/>
+      <text x="716" y="172" class="dist" fill="#2447a6" text-anchor="middle">best text wins</text>
+      <text x="770" y="22" class="step">3 · ranked by the closest text</text>
+      <g class="stack">
+        <rect x="846" y="86" width="118" height="78" fill="#fffefa" stroke="#1d2633" stroke-width="1" transform="rotate(3 905 125)"/>
+        <rect x="834" y="74" width="118" height="78" fill="#fffefa" stroke="#1d2633" stroke-width="1" transform="rotate(-2 893 113)"/>
+        <rect x="822" y="60" width="118" height="78" fill="#fffefa" stroke="#1d2633" stroke-width="1.2"/>
+        <rect x="828" y="66" width="60" height="5" fill="#1d2633" opacity=".8"/>
+        <rect x="828" y="77" width="40" height="36" fill="#e9dfc4" stroke="#1d2633" stroke-width=".8"/>
+        <path d="M831 110 l9 -12 l7 8 l6 -16 l11 20 z" fill="#8ed3c7" stroke="#1d2633" stroke-width=".7"/>
+        <g fill="none" stroke="#1d2633" stroke-width=".6" opacity=".75"><path d="M876 77 h54 M876 86 h54 M876 95 h54 M876 104 h54 M885 77 v27 M894 77 v27 M903 77 v27 M912 77 v27 M921 77 v27"/></g>
+        <text x="828" y="128" class="axl">Images are Numbers</text>
+        <text x="828" y="136" class="tiny">45-884 · session 6 · distance 0.46</text>
+      </g>
+      <path class="ink" d="M812 64 m-14 0 c-1 -11 8 -18 17 -17 c10 1 16 8 15 18 c-1 10 -9 15 -18 14 c-9 -1 -15 -7 -14 -15" fill="none" stroke="#b8352a" stroke-width="1.8" stroke-linecap="round" style="--len:110"/>
+      <text x="812" y="69" class="rank" text-anchor="middle">1</text>
+      <text x="970" y="98" class="rank2" text-anchor="middle">2</text>
+      <text x="976" y="170" class="rank2" text-anchor="middle">3</text>
+      <text x="770" y="196" class="axl">each result says which text won,</text>
+      <text x="770" y="209" class="axl">how close it was, and the sentence</text>
+      <text x="770" y="222" class="axl">that matched; its other texts are</text>
+      <text x="770" y="235" class="axl">listed as misses</text>
+    </svg>
+    <figcaption class="figcap" id="story-cap">fig. 1 &middot; what the app does. A question is compared with every text attached to every slide: the slide's own text and notes, an AI's description of its picture, what I said while it was on screen, and the keywords stemmed from all of them. The slide whose closest text is nearest comes back first, and says why.</figcaption>
+  </figure>
+
   <section class="hero" id="hero" aria-labelledby="hero-title">
     <span class="sec-no" aria-hidden="true">No. 01</span>
     <div class="hero-text">
       <p class="stamp hero-copy" style="--rot:-2deg">A retrieval experiment</p>
+      <p class="tagline hero-copy"><span class="w" style="--i:0">This</span> <span class="w" style="--i:1">tool</span> <span class="w" style="--i:2">uses</span> <a class="w key" href="https://en.wikipedia.org/wiki/Word_embedding" style="--i:3"><mark>word embeddings</mark><span class="fire" aria-hidden="true"><i style="--a:0deg;--d:64px;--fc:#b8352a"></i><i style="--a:22deg;--d:92px;--fc:#f6c453"></i><i style="--a:45deg;--d:76px;--fc:#2447a6"></i><i style="--a:68deg;--d:104px;--fc:#7b4fa3"></i><i style="--a:90deg;--d:64px;--fc:#2e7d4f"></i><i style="--a:112deg;--d:92px;--fc:#f3a391"></i><i style="--a:135deg;--d:76px;--fc:#9ccbea"></i><i style="--a:158deg;--d:104px;--fc:#ffe56b"></i><i style="--a:180deg;--d:64px;--fc:#b8352a"></i><i style="--a:202deg;--d:92px;--fc:#f6c453"></i><i style="--a:225deg;--d:76px;--fc:#2447a6"></i><i style="--a:248deg;--d:104px;--fc:#7b4fa3"></i><i style="--a:270deg;--d:64px;--fc:#2e7d4f"></i><i style="--a:292deg;--d:92px;--fc:#f3a391"></i><i style="--a:315deg;--d:76px;--fc:#9ccbea"></i><i style="--a:338deg;--d:104px;--fc:#ffe56b"></i></span></a> <span class="w" style="--i:4">to</span> <span class="w" style="--i:5">search</span> <span class="w" style="--i:6">a</span> <a class="w" href="https://en.wikipedia.org/wiki/Vector_database" style="--i:7"><mark class="b">vector database</mark></a> <span class="w" style="--i:8">for</span> <span class="w" style="--i:9">the</span> <span class="w" style="--i:10">most</span> <span class="w" style="--i:11">relevant</span> <span class="w" style="--i:12">course</span> <span class="w" style="--i:13">slides</span> <span class="w" style="--i:14">about</span> <span class="w" style="--i:15">a</span> <span class="w" style="--i:16">topic.</span></p>
       <h1 id="hero-title" class="hero-copy">Find the slide where I already <span class="u">explained it<svg class="ov" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 12 C 60 4, 120 16, 180 9 S 260 6, 297 11" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span></h1>
       <p class="lede hero-copy">A technical project on one question: how do you match a question to a slide? Every slide I have taught since Fall 2023, <mark>2,801 of them</mark> across five courses, is indexed four ways: what I said while it was on screen, an AI's description of its picture, its own text and speaker notes, and plain keywords. Each result shows which way found it and why. I use it to pull old slides into new decks.</p>
 
@@ -110,7 +190,7 @@
             <circle cx="5" cy="62" r="3.2" fill="#cdb8e8" stroke="#1d2633" stroke-width=".6"/><text class="lg" x="13" y="65">AI Methods</text>
           </g>
         </svg>
-        <figcaption class="figcap">fig. 1 &middot; every slide as a point in meaning space. A question lands next to the slides that answer it; those come back first.</figcaption>
+        <figcaption class="figcap">fig. 2 &middot; every slide as a point in meaning space. A question lands next to the slides that answer it; those come back first.</figcaption>
       </figure>
       <p class="note fig-note" aria-hidden="true">&uarr; the three in the circle<br>are the answer</p>
     </div>
@@ -122,10 +202,54 @@
     <h2 id="ways-title">Four ways a slide can match a question</h2>
     <p class="ways-intro">Every slide is stored as several searchable items. A question is embedded once and compared with all of them by meaning; a keyword search runs over the same text. A slide ranks by its best item, and opening it shows which item won, its distance, and the sentence that matched.</p>
     <div class="ways">
-      <div class="way" style="--c:#b8352a;--rot:-1deg"><span class="tape tc"></span><span class="code">Narration</span><span class="lvl">what I said while it was on screen</span><p>Instructor lines from the class recording, cut into 120-word chunks, each its own item. Often the closest to how a question is asked, and stored per term, so the same slide keeps what I said in each course.</p><span class="cnt" title="212,529 words of narration, at 500 words a page">425 pages of text</span></div>
-      <div class="way" style="--c:#7b4fa3;--rot:.8deg"><span class="tape tc"></span><span class="code">Image description</span><span class="lvl">written by a vision model</span><p>Claude Haiku looks at the slide and writes what the picture shows, so a chart or a photo with no words on it can still be found by what it is about.</p><span class="cnt">every slide with a picture</span></div>
-      <div class="way" style="--c:#2447a6;--rot:-.6deg"><span class="tape tc"></span><span class="code">Slide text + notes</span><span class="lvl">the deck itself</span><p>Course, session, slide number, title, the text on the page and the first 220 words of the speaker notes, in one paragraph.</p><span class="cnt">all 2,801 slides</span></div>
-      <div class="way" style="--c:#2e7d4f;--rot:1.1deg"><span class="tape tc"></span><span class="code">Keywords</span><span class="lvl">Postgres full-text search</span><p>Every item's text is stemmed and indexed, so a slide's keywords are the words on it, in its notes, in its description and in what I said. Every word of the question must appear. By default a keyword hit counts half as much as a meaning hit; the slider above the questions moves that.</p><span class="cnt">all items</span></div>
+      <div class="way" style="--c:#b8352a;--rot:-1deg"><span class="tape tc"></span><span class="code">Narration</span><span class="lvl">what I said while it was on screen</span><svg class="way-doodle" viewBox="0 0 120 80" aria-hidden="true">
+  <g fill="none" stroke="#1d2633" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="44" y="6" width="22" height="38" rx="11" fill="#f3a391"/>
+    <path d="M50 16 h10 M50 22 h10 M50 28 h10 M50 34 h10" stroke-width="1.2"/>
+    <path d="M36 32 c0 14 10 21 19 21 c9 0 19 -7 19 -21"/>
+    <path d="M55 53 v12 M43 66 h24"/>
+    <path d="M76 22 c5 4 5 12 0 16 M83 15 c9 8 9 22 0 30 M90 8 c13 12 13 32 0 44" stroke="#b8352a"/>
+    <path d="M6 44 h22 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-10 l-6 6 v-6 h-6 a4 4 0 0 1 -4 -4 v-10 a4 4 0 0 1 4 -4 z" fill="#fffefa" stroke-width="1.4"/>
+  </g>
+  <text x="19" y="56" text-anchor="middle" font-family="Kalam, cursive" font-size="9" fill="#b8352a">so…</text>
+</svg><p>Instructor lines from the class recording, cut into 120-word chunks, each its own item. Often the closest to how a question is asked, and stored per term, so the same slide keeps what I said in each course.</p><span class="cnt" title="212,529 words of narration, at 500 words a page">425 pages of text</span></div>
+      <div class="way" style="--c:#7b4fa3;--rot:.8deg"><span class="tape tc"></span><span class="code">Image description</span><span class="lvl">written by a vision model</span><svg class="way-doodle" viewBox="0 0 120 80" aria-hidden="true">
+  <g fill="none" stroke="#1d2633" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="10" width="54" height="42" fill="#fffefa"/>
+    <rect x="13" y="15" width="44" height="32" fill="#e9dfc4" stroke-width="1.2"/>
+    <path d="M15 45 l12 -16 l9 10 l8 -18 l13 24 z" fill="#8ed3c7" stroke-width="1.2"/>
+    <circle cx="46" cy="23" r="4" fill="#f6c453" stroke-width="1.2"/>
+    <path d="M70 32 c10 -14 30 -14 40 0 c-10 14 -30 14 -40 0 z" fill="#fffefa"/>
+    <circle cx="90" cy="32" r="6" fill="#cdb8e8"/>
+    <circle cx="90" cy="32" r="2.2" fill="#1d2633" stroke="none"/>
+    <path d="M74 50 c8 -4 16 -4 24 0" stroke="#7b4fa3" stroke-width="1.2"/>
+  </g>
+  <text x="8" y="72" font-family="Kalam, cursive" font-size="10" fill="#7b4fa3">"a photo of a cat beside a grid…"</text>
+</svg><p>Claude Haiku looks at the slide and writes what the picture shows, so a chart or a photo with no words on it can still be found by what it is about.</p><span class="cnt">every slide with a picture</span></div>
+      <div class="way" style="--c:#2447a6;--rot:-.6deg"><span class="tape tc"></span><span class="code">Slide text + notes</span><span class="lvl">the deck itself</span><svg class="way-doodle" viewBox="0 0 120 80" aria-hidden="true">
+  <g fill="none" stroke="#1d2633" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="6" y="8" width="70" height="46" fill="#fffefa"/>
+    <path d="M13 18 h34" stroke-width="3.2" stroke="#2447a6"/>
+    <path d="M13 27 h50 M13 34 h44 M13 41 h52 M13 48 h30" stroke-width="1.3"/>
+    <rect x="66" y="40" width="40" height="30" fill="#ffe17a" stroke-width="1.4" transform="rotate(-6 86 55)"/>
+    <path d="M72 50 h26 M72 56 h22 M72 62 h18" stroke-width="1.1" transform="rotate(-6 86 55)"/>
+    <path d="M100 8 l12 12 l-26 26 l-14 2 l2 -14 z" fill="#f6c453" stroke-width="1.4"/>
+    <path d="M96 12 l12 12" stroke-width="1.2"/>
+  </g>
+  <text x="70" y="36" font-family="Kalam, cursive" font-size="9" fill="#2447a6">notes</text>
+</svg><p>Course, session, slide number, title, the text on the page and the first 220 words of the speaker notes, in one paragraph.</p><span class="cnt">all 2,801 slides</span></div>
+      <div class="way" style="--c:#2e7d4f;--rot:1.1deg"><span class="tape tc"></span><span class="code">Keywords</span><span class="lvl">Postgres full-text search</span><svg class="way-doodle" viewBox="0 0 120 80" aria-hidden="true">
+  <g fill="none" stroke="#1d2633" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20 h52 l10 11 l-10 11 h-52 z" fill="#a9d8a1"/>
+    <circle cx="9" cy="31" r="2" fill="#fffefa" stroke-width="1.2"/>
+    <circle cx="92" cy="33" r="21" fill="rgba(255,254,250,.8)"/>
+    <path d="M106 48 l12 12" stroke-width="4"/>
+    <path d="M58 60 c6 6 14 8 22 6" stroke="#2e7d4f" stroke-width="1.2" stroke-dasharray="3 2"/>
+  </g>
+  <text x="37" y="34" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7.5" font-weight="600" fill="#1d2633">clustering</text>
+  <text x="92" y="37" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="600" fill="#2e7d4f">cluster</text>
+  <text x="30" y="74" font-family="Kalam, cursive" font-size="10" fill="#2e7d4f">stemmed to its root</text>
+</svg><p>Every item's text is stemmed and indexed, so a slide's keywords are the words on it, in its notes, in its description and in what I said. Every word of the question must appear. By default a keyword hit counts half as much as a meaning hit; the slider above the questions moves that.</p><span class="cnt">all items</span></div>
     </div>
   </section>
 

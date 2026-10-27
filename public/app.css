@@ -137,6 +137,23 @@ p { margin: 0 0 1em; }
 mark { color: inherit; background-color: transparent; padding: 0 .12em; margin: 0 -.12em; box-decoration-break: clone; -webkit-box-decoration-break: clone;
   background-image: linear-gradient(100deg, transparent .15em, var(--hlc, var(--hl-yellow)) .3em, var(--hlc, var(--hl-yellow)) calc(100% - .3em), transparent calc(100% - .1em));
   background-repeat: no-repeat; background-size: 100% 72%; background-position: 0 70%; }
+mark.b { --hlc: var(--hl-blue); } mark.g { --hlc: var(--hl-green); } mark.p { --hlc: var(--hl-pink); }
+
+/* the tagline: words land one by one, the two terms get a highlighter sweep, fireworks on "word embeddings" */
+.tagline { font-family: var(--serif); font-size: clamp(17px, 1.5vw, 20px); line-height: 1.5; max-width: 34em; margin: -4px 0 16px; color: var(--ink); }
+.tagline .w { display: inline-block; opacity: 0; transform: translateY(6px); animation: wordin .4s ease forwards; animation-delay: calc(.5s + var(--i) * .13s); }
+@keyframes wordin { to { opacity: 1; transform: none; } }
+.tagline a.w { position: relative; text-decoration: none; color: inherit; }
+.tagline a.w mark { background-size: 0% 72%; animation: hl .8s cubic-bezier(.6,.1,.3,1) forwards; animation-delay: calc(.75s + var(--i) * .13s); }
+@keyframes hl { to { background-size: 100% 72%; } }
+.tagline a.w:hover mark, .tagline a.w:focus-visible mark { text-decoration: underline; text-decoration-color: var(--pen); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.tagline a.w::after { content: " \2197"; font-family: var(--mono); font-size: .7em; color: var(--pen); vertical-align: super; }
+.fire { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.fire i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--fc); opacity: 0; transform: rotate(var(--a)) translateY(0) scale(.3); animation: fire 1.1s cubic-bezier(.15,.7,.3,1) forwards; animation-delay: calc(1s + var(--i) * .13s); }
+.fire i:nth-child(odd) { border-radius: 1px; width: 6px; height: 6px; }
+@keyframes fire { 0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(.3); } 12% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(1); } }
+.fire i:nth-child(n+9) { animation-delay: calc(1.15s + var(--i) * .13s); }
+@media (prefers-reduced-motion: reduce) { .tagline .w { animation: none; opacity: 1; transform: none; } .tagline a.w mark { animation: none; background-size: 100% 72%; } .fire { display: none; } }
 
 /* the search line: a ruled line on the paper with a sticky note for the button */
 .search { position: relative; margin: 50px 0 14px; }
@@ -203,6 +220,24 @@ mark { color: inherit; background-color: transparent; padding: 0 .12em; margin: 
 .tape.tr { top: -10px; right: -24px; transform: rotate(38deg); }
 .tape.tc { top: -14px; left: 50%; margin-left: -48px; transform: rotate(-3deg); }
 
+/* fig. 1: the cartoon of what the app does, a wide taped card above the headline */
+.story { width: auto; margin: 34px 6px 26px; padding: 18px 22px 12px; }
+.story-svg text { font-family: var(--mono); fill: var(--ink); }
+.story-svg .step { font-size: 11.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; fill: var(--red); }
+.story-svg .q { font-family: var(--serif); font-style: italic; font-size: 17px; }
+.story-svg .axl { font-size: 9.5px; fill: var(--ink-2); }
+.story-svg .tiny { font-size: 6.5px; fill: var(--ink-2); }
+.story-svg .lab { font-size: 9.5px; font-weight: 600; letter-spacing: .02em; }
+.story-svg .snip { font-family: var(--serif); font-style: italic; font-size: 9.5px; fill: var(--ink-2); }
+.story-svg .dist { font-size: 9.5px; fill: var(--red); }
+.story-svg .dist .best { font-weight: 600; }
+.story-svg .hand { font-family: var(--hand); font-size: 14px; }
+.story-svg .rank { font-family: var(--hand); font-weight: 700; font-size: 17px; fill: var(--red); }
+.story-svg .rank2 { font-family: var(--hand); font-weight: 700; font-size: 14px; fill: var(--ink-2); }
+.story-svg .ink { stroke-dasharray: var(--len, 110); stroke-dashoffset: var(--len, 110); animation: draw 1s cubic-bezier(.55,.1,.35,1) 1.1s forwards; }
+.searched .story { display: none; }
+@media (max-width: 760px) { .story { margin: 26px 0 18px; padding: 12px 10px 8px; } .story-svg .q { font-size: 20px; } }
+
 /* stats, like the tally cards on the site */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; margin-top: 6px; }
 .stat { background: var(--card); padding: 18px 20px 16px; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 10px 16px -12px rgba(0,0,0,.4); border: 1.5px solid rgba(29,38,51,.12); }
@@ -220,6 +255,7 @@ mark { color: inherit; background-color: transparent; padding: 0 .12em; margin: 
 .way .tape.tc { width: 70px; margin-left: -35px; top: -12px; }
 .way .code { font-family: var(--mono); font-weight: 600; font-size: 15px; color: var(--c, var(--red)); letter-spacing: .02em; line-height: 1.2; }
 .way .lvl { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; line-height: 1.4; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid var(--margin); }
+.way-doodle { width: 112px; height: auto; display: block; margin: 2px 0 10px; overflow: visible; }
 .way p { font-size: 14px; line-height: 26px; margin: 0; color: var(--ink); flex: 1; }
 .way .cnt { margin-top: 10px; align-self: flex-start; font-family: var(--hand); font-size: 16px; color: var(--c, var(--pen)); transform: rotate(-2deg); }
 @media (max-width: 1100px) { .ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

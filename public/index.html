@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Slide Finder · Ben Collier</title>
-<meta name="description" content="Search every slide Ben Collier has taught since Fall 2023 by meaning, with what he said in class while each slide was on screen.">
+<meta name="description" content="Ben Collier's tool for building new slide decks: search every slide he has taught since Fall 2023 by meaning, see what he said in class over each one, and export the picks as the start of a new deck.">
 <meta name="theme-color" content="#22302b">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,16 +42,16 @@
 <main id="main" class="sheet">
   <div class="sheet-head">
     <span class="field" aria-hidden="true">Subject <span class="val">my slides, five courses</span></span>
-    <span class="field" aria-hidden="true">Filed under <span class="val">search by meaning</span></span>
+    <span class="field" aria-hidden="true">Filed under <span class="val">building new decks</span></span>
     <span class="field pageno" aria-hidden="true">Entries <span class="val">2,801 slides</span></span>
   </div>
 
   <section class="hero" id="hero" aria-labelledby="hero-title">
     <span class="sec-no" aria-hidden="true">No. 01</span>
     <div class="hero-text">
-      <p class="stamp hero-copy" style="--rot:-2deg">Every slide since Fall 2023</p>
+      <p class="stamp hero-copy" style="--rot:-2deg">My deck-building tool</p>
       <h1 id="hero-title" class="hero-copy">Find the slide where I already <span class="u">explained it<svg class="ov" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 12 C 60 4, 120 16, 180 9 S 260 6, 297 11" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span></h1>
-      <p class="lede hero-copy">Ask the way a student would. It searches <mark>2,801 slides</mark> from five courses by what the question <em>means</em>, not the words it uses, and shows what I said in class while each slide was on screen.</p>
+      <p class="lede hero-copy">When I build a new deck, I start here. It searches every slide I have taught since Fall 2023, <mark>2,801 of them</mark> across five courses, by what a question <em>means</em> rather than the words it uses, and shows what I said in class while each one was on screen. I pick the slides I want and export them as the start of the new deck.</p>
 
       <form id="search" class="search" autocomplete="off" role="search">
         <label class="sr-only" for="q">Search through slides</label>
@@ -60,7 +60,7 @@
           <button type="submit" class="sticky find" style="--rot:-2.5deg"><span class="big">Find slides &rarr;</span></button>
         </div>
         <select id="course" hidden aria-hidden="true" tabindex="-1"><option value="">All courses</option></select>
-        <p class="note search-note hero-copy" aria-hidden="true">ask a question,<br>not keywords</p>
+        <p class="note search-note hero-copy" aria-hidden="true">ask it the way<br>a student would</p>
       </form>
 
       <div class="options">
@@ -69,7 +69,7 @@
       </div>
 
       <div class="try hero-copy">
-        <p class="kicker">Try one of these</p>
+        <p class="kicker">Questions I know it answers</p>
         <div id="examples" class="examples"></div>
       </div>
     </div>

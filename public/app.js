@@ -277,25 +277,60 @@ $('#deck-form').addEventListener('submit', async e => {
   btn.disabled = false;
 });
 
+const ICON = {
+  deck: '<svg viewBox="0 0 32 24"><rect x="7" y="7" width="20" height="13" fill="#fffefa" transform="rotate(4 17 13)"/><rect x="4" y="4" width="20" height="13" fill="#fffefa" transform="rotate(-3 14 10)"/><path d="M8 8h11M8 12h8M8 15h6" stroke-width="1.2" transform="rotate(-3 14 10)"/></svg>',
+  student: '<svg viewBox="0 0 32 24"><path d="M4 3h18a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-10l-6 5v-5h-2a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z" fill="#fffefa"/><text x="13" y="14" text-anchor="middle" font-family="Kalam, cursive" font-size="12" font-weight="700" fill="#2447a6" stroke="none">?</text></svg>',
+  term: '<svg viewBox="0 0 32 24"><circle cx="13" cy="11" r="8" fill="#fffefa"/><path d="M19 17l8 6" stroke-width="3"/><path d="M9 11h8" stroke="#2e7d4f" stroke-width="1.6"/></svg>',
+  never: '<svg viewBox="0 0 32 24"><circle cx="16" cy="12" r="9" fill="#fffefa"/><path d="M10 6l12 12" stroke="#b8352a" stroke-width="2.2"/></svg>',
+};
 const EXAMPLES = [
-  { label: 'Find slides for a new deck', items: [
+  { key: 'deck', label: 'Find slides for a new deck', color: '#f6c453', ink: '#b7791f', items: [
     'help me find slides that explain gradient descent',
     'help me find slides that explain computer vision',
     'help me find slides on customer segmentation',
     'help me find slides about A/B testing',
     'help me find slides on how large language models work',
     'help me find slides on building a dashboard',
+    'help me find slides that explain decision trees',
+    'help me find slides on random forests',
+    'help me find slides on the steps of k-means clustering',
+    'help me find slides on precision and recall',
+    'help me find slides that introduce neural networks',
+    'help me find slides on retrieval-augmented generation',
+    'help me find slides on sentiment analysis of text',
+    'help me find slides on network analysis',
+    'help me find slides on the data mining process',
+    'help me find slides on recommendation systems',
+    'help me find slides on AI agents',
+    'help me find slides about bias in AI',
   ] },
-  { label: 'Questions a student would ask', items: [
+  { key: 'student', label: 'Questions a student would ask', color: '#9ccbea', ink: '#2447a6', items: [
     'help me understand what a hyperparameter is',
     'help me understand the difference between classification and regression',
+    'what is the difference between AI, machine learning and deep learning',
     'why does the chatbot make things up',
     'how does a computer read a photo',
     'it fits the data it has seen perfectly and falls apart on anything new',
     'how are the words in a sentence turned into numbers',
+    'why do we split data into training and test sets',
+    'what does a confusion matrix tell me',
+    'how do I know if my model is any good',
+    'how does a recommendation system know what I like',
+    'what is an AI agent',
+    'what is a token in a language model',
+    'why is my model biased',
+    'how do I clean messy data',
+    'why would I use a log scale',
+    'how do I pick the right chart for my data',
+    'how do I predict demand in the future',
+    'teach the machine by rewarding it when it does well',
   ] },
-  { label: 'Exact terms, where keywords do the work', items: ['SMOTE', 'mtry', 'k-means', 'ROC curve'] },
-  { label: 'Things I never taught (it should say so)', items: ['how do I bake sourdough bread', 'what is the capital of Peru'] },
+  { key: 'term', label: 'Exact terms, where keywords do the work', color: '#a9d8a1', ink: '#2e7d4f', items: [
+    'SMOTE', 'mtry', 'k-means', 'ROC curve', 'XGBoost', 'cross-validation', 'CRISP-DM', 'Tableau', 'dendrogram', 'heatmap', 'A/B test', 'LASSO', 'embedding',
+  ] },
+  { key: 'never', label: 'Things I never taught (it should say so)', color: '#f3a391', ink: '#b8352a', items: [
+    'how do I bake sourdough bread', 'what is the capital of Peru', 'how do I change a flat tire', 'what is the best pizza in Pittsburgh', 'who won the Stanley Cup in 1991',
+  ] },
 ];
 
 // ---- misc ------------------------------------------------------------------
@@ -328,7 +363,7 @@ async function init() {
   if (me.needs_passcode && !me.logged_in) { $('#login').showModal(); return; }
   await Promise.all([loadCourses(), refreshPicks()]);
   const h = decodeURIComponent(location.hash.slice(1));
-  $('#examples').innerHTML = EXAMPLES.map(g => `<div class="exgroup"><p class="exlabel">${esc(g.label)}</p><div class="exrow">${g.items.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('')}</div></div>`).join('');
+  $('#examples').innerHTML = EXAMPLES.map(g => `<div class="exgroup" style="--c:${g.color};--ink:${g.ink}"><p class="exlabel"><span class="exicon">${ICON[g.key]}</span>${esc(g.label)}<span class="excount">${g.items.length}</span></p><div class="exrow">${g.items.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('')}</div></div>`).join('');
   if (h) { q.value = h; grow(); run(); }
   else q.focus({ preventScroll: true });
 }

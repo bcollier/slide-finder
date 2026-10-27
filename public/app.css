@@ -188,19 +188,30 @@ mark.b { --hlc: var(--hl-blue); } mark.g { --hlc: var(--hl-green); } mark.p { --
 .opt-hint { max-width: 46em; font-size: 13px; line-height: 1.5; color: var(--ink-2); margin: 2px 0 10px; font-variant-numeric: tabular-nums; }
 .opt-hint:empty { display: none; }
 .mode-single #kw-opt, .mode-single .opt-hint { display: none; }
-.try { margin-top: 26px; }
-.examples { display: grid; gap: 18px; }
-.exlabel { font-family: var(--hand); font-size: 18px; color: var(--pen); margin: 0 0 6px; transform: rotate(-1deg); transform-origin: left; display: inline-block; }
-.exrow { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+.try { padding-top: 30px; }
+.try h2 { margin-bottom: 8px; }
+.examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; margin-top: 18px; }
+.exgroup { min-width: 0; }
+.exgroup:nth-child(3), .exgroup:nth-child(4) { grid-column: span 1; }
+.exlabel { display: flex; align-items: center; gap: 8px; font-family: var(--hand); font-size: 19px; font-weight: 700; color: var(--ink); margin: 0 0 10px; }
+.exicon { width: 32px; height: 24px; flex: none; }
+.exicon svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: #1d2633; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.excount { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--ink-2); background: var(--c); padding: 2px 8px; border-radius: 999px; margin-left: 2px; }
+.exrow { display: flex; flex-wrap: wrap; gap: 9px 10px; }
 .ex {
-  border: 0; background: var(--card); color: var(--ink); text-align: left;
-  font-family: var(--serif); font-style: italic; font-size: 14.5px; line-height: 1.3; padding: 7px 12px 7px 10px;
-  border-left: 3px solid var(--pen); box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 6px 10px -8px rgba(0,0,0,.35);
-  transition: transform .15s ease, box-shadow .15s ease;
+  border: 0; color: var(--ink); text-align: left; cursor: pointer;
+  background: color-mix(in srgb, var(--c) 38%, #fffefa); border-left: 3px solid var(--ink, var(--pen));
+  font-family: var(--serif); font-size: 14px; line-height: 1.3; padding: 7px 11px 7px 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.14), 0 7px 10px -8px rgba(0,0,0,.4);
+  transform: rotate(var(--r, 0deg)); transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
 }
-.ex::before { content: "“"; color: var(--pen); font-style: normal; margin-right: 1px; }
-.ex::after { content: "”"; color: var(--pen); font-style: normal; margin-left: 1px; }
-.ex:hover, .ex:focus-visible { transform: translateY(-2px) rotate(-.6deg); box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 12px 16px -10px rgba(0,0,0,.45); }
+.ex:nth-child(4n+1) { --r: -.9deg; } .ex:nth-child(4n+2) { --r: .7deg; } .ex:nth-child(4n+3) { --r: -.4deg; } .ex:nth-child(4n+4) { --r: 1deg; }
+.ex::before { content: "\201C"; color: var(--ink, var(--pen)); margin-right: 1px; }
+.ex::after { content: "\201D"; color: var(--ink, var(--pen)); margin-left: 1px; }
+.exgroup[style*="--c:#a9d8a1"] .ex, .exgroup:nth-child(3) .ex { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+.exgroup:nth-child(3) .ex::before, .exgroup:nth-child(3) .ex::after { content: none; }
+.ex:hover, .ex:focus-visible { transform: rotate(0) translateY(-3px) scale(1.02); background: color-mix(in srgb, var(--c) 70%, #fffefa); box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 14px 18px -10px rgba(0,0,0,.45); }
+@media (max-width: 900px) { .examples { grid-template-columns: 1fr; gap: 22px; } }
 
 /* the figure: a taped index card with the scatter */
 .hero-art { position: relative; padding-top: 22px; }

@@ -150,10 +150,6 @@
       </div>
       <p class="opt-hint" id="kw-hint">Each slide gets a meaning rank and a keyword rank; its score is 1/(60 + meaning rank) plus the keyword weight × 1/(60 + keyword rank). The default 0.5× is measured: keywords alone put the right slide first for 1 of 28 test questions, so they count half, but they still decide exact terms like SMOTE. 0× ignores keywords; 1× is equal weight; above 1× keywords lead.</p>
 
-      <div class="try hero-copy">
-        <p class="kicker">Try it</p>
-        <div id="examples" class="examples"></div>
-      </div>
     </div>
 
     <div class="hero-art hero-copy">
@@ -196,8 +192,16 @@
     </div>
   </section>
 
-  <section class="sec ways-sec hero-copy" aria-labelledby="ways-title">
+  <section class="sec try hero-copy" aria-labelledby="try-title">
     <span class="sec-no" aria-hidden="true">No. 02</span>
+    <p class="kicker">Try it</p>
+    <h2 id="try-title">Fifty-five questions I know it answers</h2>
+    <p class="ways-intro">Each one was checked against the index. Click any of them.</p>
+    <div id="examples" class="examples"></div>
+  </section>
+
+  <section class="sec ways-sec hero-copy" aria-labelledby="ways-title">
+    <span class="sec-no" aria-hidden="true">No. 03</span>
     <p class="kicker">The experiment</p>
     <h2 id="ways-title">Four ways a slide can match a question</h2>
     <p class="ways-intro">Every slide is stored as several searchable items. A question is embedded once and compared with all of them by meaning; a keyword search runs over the same text. A slide ranks by its best item, and opening it shows which item won, its distance, and the sentence that matched.</p>
@@ -254,7 +258,7 @@
   </section>
 
   <section class="sec stats-sec hero-copy" aria-labelledby="stats-title">
-    <span class="sec-no" aria-hidden="true">No. 03</span>
+    <span class="sec-no" aria-hidden="true">No. 04</span>
     <p class="kicker">What is in the notebook</p>
     <h2 id="stats-title">Indexed so far</h2>
     <div class="stats">

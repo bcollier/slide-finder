@@ -264,16 +264,24 @@ $('#deck-form').addEventListener('submit', async e => {
 });
 
 const EXAMPLES = [
-  'how do I group customers into meaningful segments',
-  'how do I predict demand in the future',
-  'teach the machine by rewarding it when it does well',
-  'how does a computer read a photo',
-  'why does the chatbot make things up',
-  'how do I get an AI to do a multi-step job on its own',
-  'what should a company do first with AI',
-  'it fits the data it has seen perfectly and falls apart on anything new',
-  'how are the words in a sentence turned into numbers',
-  'how do I find the main themes in a pile of documents',
+  { label: 'Find slides for a new deck', items: [
+    'help me find slides that explain gradient descent',
+    'help me find slides that explain computer vision',
+    'help me find slides on customer segmentation',
+    'help me find slides about A/B testing',
+    'help me find slides on how large language models work',
+    'help me find slides on building a dashboard',
+  ] },
+  { label: 'Questions a student would ask', items: [
+    'help me understand what a hyperparameter is',
+    'help me understand the difference between classification and regression',
+    'why does the chatbot make things up',
+    'how does a computer read a photo',
+    'it fits the data it has seen perfectly and falls apart on anything new',
+    'how are the words in a sentence turned into numbers',
+  ] },
+  { label: 'Exact terms, where keywords do the work', items: ['SMOTE', 'mtry', 'k-means', 'ROC curve'] },
+  { label: 'Things I never taught (it should say so)', items: ['how do I bake sourdough bread', 'what is the capital of Peru'] },
 ];
 
 // ---- misc ------------------------------------------------------------------
@@ -306,7 +314,7 @@ async function init() {
   if (me.needs_passcode && !me.logged_in) { $('#login').showModal(); return; }
   await Promise.all([loadCourses(), refreshPicks()]);
   const h = decodeURIComponent(location.hash.slice(1));
-  $('#examples').innerHTML = EXAMPLES.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('');
+  $('#examples').innerHTML = EXAMPLES.map(g => `<div class="exgroup"><p class="exlabel">${esc(g.label)}</p><div class="exrow">${g.items.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('')}</div></div>`).join('');
   if (h) { q.value = h; run(); }
 }
 document.addEventListener('click', e => { if (e.target.classList.contains('ex')) { q.value = e.target.textContent; run(); } });

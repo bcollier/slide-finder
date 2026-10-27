@@ -286,7 +286,12 @@ Step by step:
    `match_count` long. The meaning side is an exact scan over all items rather than an index
    lookup, because the HNSW index returns at most 40 candidates whatever the limit and Supabase
    does not let the function raise that setting; at under 10,000 items the scan takes a few
-   milliseconds.
+   milliseconds. The keyword side needs no keyword generation step: `sf_items.fts` is a
+   generated `tsvector` (`to_tsvector('english', text)`), so every item's words are lowercased,
+   stripped of stop words and stemmed the moment the row is stored, and a slide's keywords are
+   the stemmed vocabulary of its slide text, speaker notes, AI description, narration chunks and
+   notes together. The question is stemmed the same way (`websearch_to_tsquery`), every
+   remaining word must appear in one item, and matches are ordered by `ts_rank_cd`.
 2. **One score per item.** Reciprocal rank fusion: 1/(60 + rank) from the meaning list plus
    half of 1/(60 + rank) from the keyword list. The keyword side counts half because, at equal
    weight, a slide whose image description happened to contain "computer", "read" and "photo"

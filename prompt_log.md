@@ -350,6 +350,35 @@ the slide view, runtime additions, evaluation, security). This log gained this s
 evening's mistakes above. Code cleanup ran in parallel: `search.py` split into named functions,
 the dead "two kinds" bonus removed, docstrings on every module.
 
+## 6e. The page's look and its audience (8:30 PM onward)
+
+> this landing page is truly awful and boring. make it look top notch like beautiful like
+> designed by a data scientist or by a person who is a professor of data visualization. look at
+> https://ben.collier.phd/ for design inspiration to it blends in design asthetic
+
+The page was rebuilt in the field-notebook style of my site: dark bench, cream graph-paper
+sheet with margin rule and punched holes, course index tabs, results as prints taped to the
+page with red-pen ranks, sticky notes for the buttons, and a "fig. 1" scatter of slides in
+meaning space with the question circled next to its three nearest slides. Google Fonts had to
+be allowed in the CSP. Screenshots at laptop and phone widths were checked before pushing; the
+production deploy itself is a command I run.
+
+> change the audience, this tool is actually mostly for my own use in building slide decks
+
+> this is not really the student facing version, it is a technical project exploring the
+> matching of questions with narration, wtih AI description of the image, or with powerpoint
+> notes as well as enabling keyword search. also explain how keywords for each slide are
+> generated. update documnetaiton
+
+Two corrections in a row, because the AI's first rewrite guessed the audience ("students")
+and its second guessed again ("me, building decks"). The landing now states the question the
+project explores, with four index cards for the four ways a slide can match (narration, image
+description, slide text and notes, keywords). The README's first section was rewritten the same
+way, and a new passage under "Adding and searching" explains that keywords are not generated
+at all: Postgres stems every item's text into a generated `tsvector`, so a slide's keywords are
+the stemmed vocabulary of everything attached to it, including what I said and the AI's
+description of its picture.
+
 ## 7. Evaluation
 
 `eval/run.py` scores retrieval on 28 labeled questions (private file, not in the repo) in three

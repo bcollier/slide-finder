@@ -204,6 +204,21 @@ mark { color: inherit; background-color: transparent; padding: 0 .12em; margin: 
 .stat .n { font-family: var(--serif-d); font-size: clamp(42px, 4vw, 60px); line-height: 1; display: block; font-variant-numeric: tabular-nums; }
 .stat .l { font-size: 14.5px; line-height: 1.4; display: block; color: var(--ink-2); margin-top: 8px; }
 
+/* the four ways: ruled index cards, each with its kind's pen color */
+.ways-intro { max-width: 44em; font-size: 16.5px; color: var(--ink-2); margin-bottom: 26px; }
+.ways { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px; }
+.way { position: relative; display: flex; flex-direction: column; padding: 16px 18px 14px; background-color: var(--card);
+  background-image: repeating-linear-gradient(transparent 0 25px, rgba(64,120,168,.2) 25px 26px); background-position: 0 58px; background-size: 100% calc(100% - 58px); background-repeat: repeat;
+  box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 16px 26px -16px rgba(0,0,0,.45); transform: rotate(var(--rot, 0deg)); transition: transform .2s ease; }
+.way:hover { transform: rotate(0) translateY(-4px); }
+.way .tape.tc { width: 70px; margin-left: -35px; top: -12px; }
+.way .code { font-family: var(--mono); font-weight: 600; font-size: 15px; color: var(--c, var(--red)); letter-spacing: .02em; line-height: 1.2; }
+.way .lvl { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; line-height: 1.4; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid var(--margin); }
+.way p { font-size: 14px; line-height: 26px; margin: 0; color: var(--ink); flex: 1; }
+.way .cnt { margin-top: 10px; align-self: flex-start; font-family: var(--hand); font-size: 16px; color: var(--c, var(--pen)); transform: rotate(-2deg); }
+@media (max-width: 1100px) { .ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .ways { grid-template-columns: 1fr; gap: 22px; } }
+
 /* after a search the notebook page turns to the results */
 .searched .hero-copy { display: none; }
 .searched .hero { grid-template-columns: 1fr; padding: 22px 0 0; }

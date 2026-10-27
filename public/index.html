@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Slide Finder · Ben Collier</title>
-<meta name="description" content="Ben Collier's tool for building new slide decks: search every slide he has taught since Fall 2023 by meaning, see what he said in class over each one, and export the picks as the start of a new deck.">
+<meta name="description" content="A retrieval experiment over Ben Collier's own slides: can a question be matched to a slide through what he said while it was on screen, an AI description of its picture, its text and speaker notes, or plain keywords? Every slide since Fall 2023, indexed four ways, with each result explaining which way found it.">
 <meta name="theme-color" content="#22302b">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,16 +42,16 @@
 <main id="main" class="sheet">
   <div class="sheet-head">
     <span class="field" aria-hidden="true">Subject <span class="val">my slides, five courses</span></span>
-    <span class="field" aria-hidden="true">Filed under <span class="val">building new decks</span></span>
+    <span class="field" aria-hidden="true">Filed under <span class="val">matching questions to slides</span></span>
     <span class="field pageno" aria-hidden="true">Entries <span class="val">2,801 slides</span></span>
   </div>
 
   <section class="hero" id="hero" aria-labelledby="hero-title">
     <span class="sec-no" aria-hidden="true">No. 01</span>
     <div class="hero-text">
-      <p class="stamp hero-copy" style="--rot:-2deg">My deck-building tool</p>
+      <p class="stamp hero-copy" style="--rot:-2deg">A retrieval experiment</p>
       <h1 id="hero-title" class="hero-copy">Find the slide where I already <span class="u">explained it<svg class="ov" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 12 C 60 4, 120 16, 180 9 S 260 6, 297 11" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span></h1>
-      <p class="lede hero-copy">When I build a new deck, I start here. It searches every slide I have taught since Fall 2023, <mark>2,801 of them</mark> across five courses, by what a question <em>means</em> rather than the words it uses, and shows what I said in class while each one was on screen. I pick the slides I want and export them as the start of the new deck.</p>
+      <p class="lede hero-copy">A technical project on one question: how do you match a question to a slide? Every slide I have taught since Fall 2023, <mark>2,801 of them</mark> across five courses, is indexed four ways: what I said while it was on screen, an AI's description of its picture, its own text and speaker notes, and plain keywords. Each result shows which way found it and why. I use it to pull old slides into new decks.</p>
 
       <form id="search" class="search" autocomplete="off" role="search">
         <label class="sr-only" for="q">Search through slides</label>
@@ -69,7 +69,7 @@
       </div>
 
       <div class="try hero-copy">
-        <p class="kicker">Questions I know it answers</p>
+        <p class="kicker">Questions I use to test it</p>
         <div id="examples" class="examples"></div>
       </div>
     </div>
@@ -114,8 +114,21 @@
     </div>
   </section>
 
-  <section class="sec stats-sec hero-copy" aria-labelledby="stats-title">
+  <section class="sec ways-sec hero-copy" aria-labelledby="ways-title">
     <span class="sec-no" aria-hidden="true">No. 02</span>
+    <p class="kicker">The experiment</p>
+    <h2 id="ways-title">Four ways a slide can match a question</h2>
+    <p class="ways-intro">Every slide is stored as several searchable items. A question is embedded once and compared with all of them by meaning; a keyword search runs over the same text. A slide ranks by its best item, and opening it shows which item won, its distance, and the sentence that matched.</p>
+    <div class="ways">
+      <div class="way" style="--c:#b8352a;--rot:-1deg"><span class="tape tc"></span><span class="code">Narration</span><span class="lvl">what I said while it was on screen</span><p>Instructor lines from the class recording, cut into 120-word chunks, each its own item. Often the closest to how a question is asked, and stored per term, so the same slide keeps what I said in each course.</p><span class="cnt">1,032 slides</span></div>
+      <div class="way" style="--c:#7b4fa3;--rot:.8deg"><span class="tape tc"></span><span class="code">Image description</span><span class="lvl">written by a vision model</span><p>Claude Haiku looks at the slide and writes what the picture shows, so a chart or a photo with no words on it can still be found by what it is about.</p><span class="cnt">every slide with a picture</span></div>
+      <div class="way" style="--c:#2447a6;--rot:-.6deg"><span class="tape tc"></span><span class="code">Slide text + notes</span><span class="lvl">the deck itself</span><p>Course, session, slide number, title, the text on the page and the first 220 words of the speaker notes, in one paragraph.</p><span class="cnt">all 2,801 slides</span></div>
+      <div class="way" style="--c:#2e7d4f;--rot:1.1deg"><span class="tape tc"></span><span class="code">Keywords</span><span class="lvl">Postgres full-text search</span><p>Every item's text is stemmed and indexed, so a slide's keywords are the words on it, in its notes, in its description and in what I said. Every word of the question must appear; it counts half as much as meaning.</p><span class="cnt">all items</span></div>
+    </div>
+  </section>
+
+  <section class="sec stats-sec hero-copy" aria-labelledby="stats-title">
+    <span class="sec-no" aria-hidden="true">No. 03</span>
     <p class="kicker">What is in the notebook</p>
     <h2 id="stats-title">Indexed so far</h2>
     <div class="stats">

@@ -9,12 +9,24 @@ How it all works, with diagrams: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## 1. What it does and why I built it
 
-Slide Finder searches every slide I have taught since Fall 2023, across five courses, by what the
-question means rather than the words it uses. It also shows what I said in class while each
-slide was on screen. I built it for two reasons. Retrieval in my earlier project, Faculty Twin,
-missed too often, and I wanted a small project to work out how to get retrieval right and to
-prove it with numbers. And when I build a new deck, I want to find the slide where I already
-explained something, whatever course or term it was in, and pull it into the new deck.
+Slide Finder is a technical project on one question: how do you match a question to a slide?
+Every slide I have taught since Fall 2023, across five courses, is indexed four ways, and a
+question is tried against all of them:
+
+- **narration**: what I said in class while the slide was on screen, from the de-identified
+  instructor lines of the recording, in 120-word chunks;
+- **an AI description of the picture**, written by a vision model, so a chart or a photo with no
+  words on it can still be found by what it shows;
+- **the slide's own text and speaker notes**, from the deck;
+- **keywords**: Postgres full-text search over all of that text (section 3 explains where a
+  slide's keywords come from).
+
+Meaning matches (embeddings) and keyword matches are fused into one ranking, and every result
+shows which item found it, how close it was, and the sentence that matched. The scores in
+section 5 measure what each way contributes. The project started because retrieval in my
+earlier project, Faculty Twin, missed too often and I wanted to work out how to get it right
+and prove it with numbers. The page is not student facing; it is my own tool, and I use it
+to find the slide where I already explained something and pull it into a new deck.
 
 ## 2. What is in the database
 
@@ -107,6 +119,29 @@ Each result shows:
 - which kinds of item matched, and the numbers explained below;
 - a "why" line quoting the best item, labeled "Slide says", "Image shows", "Narration" (what I
   said while the slide was on screen) or "My note".
+
+**Where a slide's keywords come from.** Nothing generates keywords as a separate step, and no
+model is asked for them. Every item's text (the slide text and speaker notes paragraph, the AI
+description, each 120-word narration chunk, each note) has a `tsvector` column that Postgres
+computes from it (`to_tsvector('english', text)`, a generated column in `sf_items`, with a GIN
+index). Postgres lowercases the text, drops English stop words ("how", "do", "the"), and
+reduces each word to its stem with the Snowball stemmer, so "clustering", "clustered" and
+"clusters" all become "cluster". A slide's keywords are therefore the stemmed vocabulary of
+everything attached to it: a word that appears only in what I said, or only in the description
+of its picture, finds the slide just as well as a word printed on it. Because the column is
+generated, a note typed in the page or a deck uploaded from the browser is keyword-searchable
+the moment its row is stored.
+
+The question goes through the same stemming (`websearch_to_tsquery('english', ...)`), which
+also drops its stop words and requires every remaining word to appear in one item; quoted
+phrases must appear in order, `or` and a leading `-` work as in a web search. Matching items
+are ranked by `ts_rank_cd`, which scores higher when the question's words sit close together
+in the text, and that order is the card's *keyword #n*. The practical effect: a long question
+rarely matches anything by keyword ("how do I group customers into meaningful segments" needs
+"group", "customer", "meaning" and "segment" all in one item), so keywords alone find the right
+slide first for 1 of the 28 labeled questions (section 5), but a short exact term such as
+"SMOTE" or "mtry" is found instantly and ranked first. That is why the fused score gives the
+keyword side half the weight of the meaning side.
 
 **Reading the numbers on a card.** Take a card that reads *score 0.0125 · distance 0.446 ·
 meaning #20 · keyword – · 1 item hit*.
@@ -1349,7 +1384,7 @@ stateDiagram-v2
 | --- | --- |
 | Look | The same field-notebook design as ben.collier.phd: a dark bench, a cream graph-paper sheet with a margin rule and punched holes, pastel index tabs, taped prints, sticky notes, red pen for stamps and marks, blue pen for margin notes. Fonts: Young Serif, Literata, IBM Plex Mono and Kalam from Google Fonts (allowed in the CSP). One theme by choice. |
 | Header | Brand, one index tab per course (filled from `/api/courses`; the tabs set a hidden `<select>` and rerun the search), Add a deck, and a sticky note with the Picked count. |
-| Landing | Written for its real reader, me building a new deck: a stamp ("My deck-building tool"), the headline, the search line with a "Find slides" sticky note, the "Show" slider (5 to 100 results, step 5, default 30, remembered in `localStorage` key `sf_n`), the match mode (meaning + keywords, meaning only, keywords only), ten example questions that are known to work, a figure of slides as points in meaning space with the question landing next to its answers, and four count cards. After a search the landing copy folds away and only the search line stays above the results; the brand link brings it back. |
+| Landing | A stamp ("A retrieval experiment"), the headline, a lede stating the question the project explores, the search line with a "Find slides" sticky note, the "Show" slider (5 to 100 results, step 5, default 30, remembered in `localStorage` key `sf_n`), the match mode (meaning + keywords, meaning only, keywords only), ten example questions used to test it, a figure of slides as points in meaning space with the question landing next to its answers, four index cards for the four ways a slide can match (narration, image description, slide text and notes, keywords), and four count cards. After a search the landing copy folds away and only the search line stays above the results; the brand link brings it back. |
 | Status line | Number of slides and best distance in handwriting, or the "not sure I taught this" warning with the distance. |
 | Result card | A print taped to the page: thumbnail, red-pen rank, title, course, term, session and slide number, "used in N sessions", the best matching sentence labeled "I said", "The image shows", "Slide text says" or "My note says", and score details (score, distance, meaning rank, keyword rank, items hit; a tooltip explains each). A slide that also exists in other courses or terms sits on a small pile with a sticky tag ("also in AI for Leaders", "also Fall 2025"); the other copies are listed in the slide dialog. |
 | Slide dialog | Two columns that scroll on their own. Left: the full image, "What is indexed for this slide" (every item with its id and word count; narration chunks also show their term and "part k of n"), notes and a note box. Right: title, where it is and where else it was used, Pick for new deck, Open image, and "Narration" per term (first time window, minutes on screen, matched by video or by text with a lower-confidence label; long text collapses). |

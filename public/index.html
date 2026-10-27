@@ -66,7 +66,9 @@
       <div class="options">
         <label class="opt">Show <input id="n" type="range" min="5" max="100" step="5" value="30"> <b id="n-val">30</b> slides</label>
         <label class="opt">Match by <select id="mode"><option value="hybrid">meaning + keywords</option><option value="vector">meaning only</option><option value="keyword">keywords only</option></select></label>
+        <label class="opt" id="kw-opt">Keywords count <input id="kw" type="range" min="0" max="2" step="0.1" value="0.5"> <b id="kw-val">0.5×</b> as much as meaning</label>
       </div>
+      <p class="opt-hint" id="kw-hint">Each slide gets a meaning rank and a keyword rank; its score is 1/(60 + meaning rank) plus the keyword weight × 1/(60 + keyword rank). The default 0.5× is measured: keywords alone put the right slide first for 1 of 28 test questions, so they count half, but they still decide exact terms like SMOTE. 0× ignores keywords; 1× is equal weight; above 1× keywords lead.</p>
 
       <div class="try hero-copy">
         <p class="kicker">Try it</p>
@@ -123,7 +125,7 @@
       <div class="way" style="--c:#b8352a;--rot:-1deg"><span class="tape tc"></span><span class="code">Narration</span><span class="lvl">what I said while it was on screen</span><p>Instructor lines from the class recording, cut into 120-word chunks, each its own item. Often the closest to how a question is asked, and stored per term, so the same slide keeps what I said in each course.</p><span class="cnt" title="212,529 words of narration, at 500 words a page">425 pages of text</span></div>
       <div class="way" style="--c:#7b4fa3;--rot:.8deg"><span class="tape tc"></span><span class="code">Image description</span><span class="lvl">written by a vision model</span><p>Claude Haiku looks at the slide and writes what the picture shows, so a chart or a photo with no words on it can still be found by what it is about.</p><span class="cnt">every slide with a picture</span></div>
       <div class="way" style="--c:#2447a6;--rot:-.6deg"><span class="tape tc"></span><span class="code">Slide text + notes</span><span class="lvl">the deck itself</span><p>Course, session, slide number, title, the text on the page and the first 220 words of the speaker notes, in one paragraph.</p><span class="cnt">all 2,801 slides</span></div>
-      <div class="way" style="--c:#2e7d4f;--rot:1.1deg"><span class="tape tc"></span><span class="code">Keywords</span><span class="lvl">Postgres full-text search</span><p>Every item's text is stemmed and indexed, so a slide's keywords are the words on it, in its notes, in its description and in what I said. Every word of the question must appear; it counts half as much as meaning.</p><span class="cnt">all items</span></div>
+      <div class="way" style="--c:#2e7d4f;--rot:1.1deg"><span class="tape tc"></span><span class="code">Keywords</span><span class="lvl">Postgres full-text search</span><p>Every item's text is stemmed and indexed, so a slide's keywords are the words on it, in its notes, in its description and in what I said. Every word of the question must appear. By default a keyword hit counts half as much as a meaning hit; the slider above the questions moves that.</p><span class="cnt">all items</span></div>
     </div>
   </section>
 

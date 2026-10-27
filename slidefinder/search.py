@@ -47,23 +47,25 @@ _TITLE_PREFIX = re.compile(r"^\[[^\]]*\]\s*")  # narration chunks start with "[s
 # ---- search ------------------------------------------------------------------
 
 def search(question: str, course: str | None = None, mode: str = "hybrid", n: int = TOP_SLIDES,
-           kinds: set[str] | None = None) -> dict:
+           kinds: set[str] | None = None, keyword_weight: float = KEYWORD_WEIGHT) -> dict:
     """Ranked slides for a question.
 
     mode: "hybrid" fuses meaning and keywords; "vector" and "keyword" use one side only.
     kinds: restrict to these item kinds (the evaluation uses it to measure what each kind adds).
+    keyword_weight: how much a keyword rank counts next to a meaning rank in hybrid mode
+    (0 ignores keywords, 1 is equal weight); the page lets the user move it.
     """
     n = max(1, min(int(n), MAX_SLIDES))
     qvec = embed.embed_query(question)
     hits = fetch_hits(qvec, question, course, n, mode, kinds)
-    ranked = rank_slides(hits, mode)[:n]
+    ranked = rank_slides(hits, mode, keyword_weight)[:n]
     attach_evidence(ranked, qvec)
     results = stack_versions(attach_slides(ranked))
     best = min((s["distance"] for s in ranked if s["distance"] is not None), default=None)
     return {
         "question": question, "mode": mode, "n": n,
         "weak": best is None or best > WEAK_DISTANCE, "best_distance": best, "weak_distance": WEAK_DISTANCE,
-        "results": results,
+        "keyword_weight": keyword_weight, "results": results,
     }
 
 
@@ -82,16 +84,16 @@ def fetch_hits(qvec: list[float], question: str, course: str | None, n: int, mod
     return hits
 
 
-def item_score(hit: dict, position: int, mode: str) -> float:
+def item_score(hit: dict, position: int, mode: str, keyword_weight: float = KEYWORD_WEIGHT) -> float:
     """Reciprocal rank fusion of the item's two ranks; a single-side mode scores by list position."""
     if mode != "hybrid":
         return 1.0 / (RRF_K + position)
     meaning = 1.0 / (RRF_K + hit["vec_rank"]) if hit["vec_rank"] is not None else 0.0
     keyword = 1.0 / (RRF_K + hit["fts_rank"]) if hit["fts_rank"] is not None else 0.0
-    return meaning + KEYWORD_WEIGHT * keyword
+    return meaning + keyword_weight * keyword
 
 
-def rank_slides(hits: list[dict], mode: str) -> list[dict]:
+def rank_slides(hits: list[dict], mode: str, keyword_weight: float = KEYWORD_WEIGHT) -> list[dict]:
     """Merge items per slide and sort. A slide takes its best item's score, the lowest distance
     and the best rank on each side, and keeps every hit for the evidence views."""
     by_slide: dict[str, dict] = {}
@@ -110,7 +112,7 @@ def rank_slides(hits: list[dict], mode: str) -> list[dict]:
                 s[side] = h[side]
         if h["distance"] is not None and (s["distance"] is None or h["distance"] < s["distance"]):
             s["distance"] = h["distance"]
-        score = item_score(h, position, mode)
+        score = item_score(h, position, mode, keyword_weight)
         if score > s["score"]:
             s["score"] = score
             s["why"] = {"kind": h["kind"], "text": h["text"], "term": h["term"]}

@@ -296,7 +296,8 @@ Step by step:
    half of 1/(60 + rank) from the keyword list. The keyword side counts half because, at equal
    weight, a slide whose image description happened to contain "computer", "read" and "photo"
    outranked "Images are Numbers" for "how does a computer read a photo"; halving it fixed that
-   and left the evaluation unchanged.
+   and left the evaluation unchanged. The weight is a request parameter (`kw`, 0 to 2,
+   default 0.5) that the page exposes as a slider, so the balance can be moved per search.
 3. **One score per slide.** A slide takes its best item's score, remembers which kinds matched,
    the closest distance, and the item that won (the "why"). Ties go to the closer distance.
 4. **Evidence.** For the top 40 slides, every sentence of the best item is embedded in one

@@ -29,6 +29,14 @@ try { const saved = localStorage.getItem('sf_n'); if (saved) { nEl.value = saved
 nEl.addEventListener('input', () => nVal.textContent = nEl.value);
 nEl.addEventListener('change', () => { try { localStorage.setItem('sf_n', nEl.value); } catch {} if (q.value.trim()) run(); });
 $('#course').addEventListener('change', () => q.value.trim() && run());
+const kwEl = $('#kw'), kwVal = $('#kw-val');
+const fmtKw = v => (+v).toFixed(1).replace(/\.0$/, '') + '×';
+try { const saved = localStorage.getItem('sf_kw'); if (saved) kwEl.value = saved; } catch {}
+kwVal.textContent = fmtKw(kwEl.value);
+kwEl.addEventListener('input', () => kwVal.textContent = fmtKw(kwEl.value));
+kwEl.addEventListener('change', () => { try { localStorage.setItem('sf_kw', kwEl.value); } catch {} if (q.value.trim()) run(); });
+const syncMode = () => document.body.classList.toggle('mode-single', $('#mode').value !== 'hybrid');
+$('#mode').addEventListener('change', syncMode); syncMode();
 
 async function run() {
   const question = q.value.trim();
@@ -36,7 +44,7 @@ async function run() {
   history.replaceState(null, '', '#' + encodeURIComponent(question));
   status.textContent = 'Searching…'; results.innerHTML = '';
   try {
-    const p = new URLSearchParams({ q: question, course: $('#course').value, mode: $('#mode').value, n: nEl.value });
+    const p = new URLSearchParams({ q: question, course: $('#course').value, mode: $('#mode').value, n: nEl.value, kw: kwEl.value });
     const d = await api('/api/search?' + p);
     render(d);
   } catch (err) { if (err.message !== 'passcode') status.textContent = 'Error: ' + err.message; }
@@ -101,7 +109,7 @@ const gpos = d => Math.max(0, Math.min(100, (d - 0.30) / (0.70 - 0.30) * 100));
 function evidence(r, s) {
   const ev = r.evidence || { items: [], misses: {} }, items = ev.items, it = items[0];
   if (!it) return '';
-  const d = lastResult, W = 0.5;
+  const d = lastResult, W = d && d.keyword_weight != null ? d.keyword_weight : 0.5;
   // D. in words, with the score split
   let why;
   if (it.vec_rank != null && it.vec_rank <= 3) why = `Ranked here because its <b>${KIND[it.kind]}</b> was the <b>${ordinal(it.vec_rank)} closest item in the whole index</b> (distance ${it.distance.toFixed(2)})`;
@@ -112,6 +120,7 @@ function evidence(r, s) {
   if (others > 0) why += ` ${others} other item${others > 1 ? 's' : ''} of this slide also matched${items[1].distance != null ? ` (next closest ${items[1].distance.toFixed(2)})` : ''}.`;
   if (r.distance != null && d && r.distance > d.weak_distance) why += ` <span class="warn">Past the weak-match line.</span>`;
   const mPart = it.vec_rank != null ? 1 / (60 + it.vec_rank) : 0, kPart = it.fts_rank != null ? W / (60 + it.fts_rank) : 0, max = 1 / 61 + W / 61;
+  if (W !== 0.5) why += ` Keyword weight ${fmtKw(W)}.`;
   const D = `<div class="because">${why}</div>
     <div class="score-split" title="score ${(mPart + kPart).toFixed(4)} of a possible ${max.toFixed(4)}"><i class="m" style="width:${(mPart / max * 100).toFixed(1)}%">${mPart ? 'meaning' : ''}</i><i class="k" style="width:${(kPart / max * 100).toFixed(1)}%">${kPart ? 'keyword' : ''}</i></div>`;
   // C. distance gauge

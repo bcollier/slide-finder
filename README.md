@@ -154,10 +154,13 @@ meaning #20 · keyword – · 1 item hit*.
   1/(60 + rank) from the meaning list plus half of 1/(60 + rank) from the keyword list; a slide
   takes its best item's score. Here 1/(60 + 20) = 0.0125 with nothing from keywords. A slide
   ranked first on both lists would score 0.0246. Results are sorted by this score, highest
-  first; ties go to the closer slide by meaning. The keyword side counts half because, with
+  first; ties go to the closer slide by meaning. The keyword side counts half by default because, with
   equal weight, a slide whose image description happened to contain "computer", "read" and
   "photo" outranked "Images are Numbers" for "how does a computer read a photo"; halving it
-  changed nothing in the evaluation (hit@1 0.68 either way).
+  changed nothing in the evaluation (hit@1 0.68 either way). The weight is a slider on the
+  page ("Keywords count 0.5× as much as meaning", 0 to 2 in steps of 0.1, remembered in the
+  browser), with a line under it explaining the formula; it is sent as `kw` and the response
+  echoes it as `keyword_weight`, so the score split in the slide dialog uses the same number.
 - *Distance 0.446*: how far the question's embedding is from the slide's closest item. 0 would
   be identical meaning, 1 unrelated. On-topic answers across my material run from about 0.35
   to 0.50; when the best distance on the page is above 0.55 the page says "I don't think I
@@ -1171,15 +1174,16 @@ The response of `GET /api/search`:
 
 ```
 {
-  "question": "...", "mode": "hybrid", "n": 30, "kind_bonus": 0.0,
-  "weak": false, "best_distance": 0.502,
+  "question": "...", "mode": "hybrid", "n": 30, "keyword_weight": 0.5,
+  "weak": false, "best_distance": 0.502, "weak_distance": 0.55,
   "results": [
     {
       "slide_id": "70445-s05-067",
-      "score": 0.0164, "raw_score": 0.0164,      // fused score (raw = before any kind bonus)
+      "score": 0.0164,                            // fused score (see section 3 of the README)
       "distance": 0.502,                          // closest item, cosine distance
       "vec_rank": 1, "fts_rank": null,            // best item rank on each side
       "kinds": ["card", "said"], "items": 4,      // kinds that hit, number of items that hit
+      "evidence": {"items": [...], "misses": {}},  // per-item ranks, distances and sentence closeness
       "why": {"kind": "said", "text": "[The sweet spot, ...] ...", "term": "2026 Fall"},
       "slide": {"slide_id", "course", "course_name", "term", "session", "session_title",
                 "slide_number", "title", "text", "used_in"},
@@ -1192,8 +1196,8 @@ The response of `GET /api/search`:
 
 `versions` holds every copy of the slide that landed in the results (one entry when there is
 only this copy). The page draws a result with several versions as a stacked card with one tab
-per version, labeled with the term and course ("Fall 2026 · AI for Business Leaders"); the tab
-swaps in that version's thumbnail, scores and why line. Copies are versions of one slide when
+that sits on a small pile with a sticky tag naming the other course or term; the slide dialog
+lists the other copies with their own narration. Copies are versions of one slide when
 their slide text is identical and at least five words (`search.family_key`); two copies from the
 same course and term are never stacked, since those are different slides sharing a caption.
 
@@ -1339,7 +1343,7 @@ turned off.
 | --- | --- | --- | --- |
 | `POST /api/login` | `{passcode}` (max 200 chars) | `{ok: true}` and the cookie | 401 wrong, 429 more than 10 tries in 10 minutes |
 | `GET /api/me` | | `{needs_passcode, logged_in}` | |
-| `GET /api/search` | `q` (required, cut to 500 chars), `course` (exact course value, optional), `mode` = `hybrid`, `vector` or `keyword`, `n` (clamped to 1..100, default 30) | See [H](#h-search-step-by-step) | 400 empty question or bad mode |
+| `GET /api/search` | `q` (required, cut to 500 chars), `course` (exact course value, optional), `mode` = `hybrid`, `vector` or `keyword`, `n` (clamped to 1..100, default 30), `kw` (keyword weight in hybrid mode, clamped to 0..2, default 0.5) | See [H](#h-search-step-by-step); the response echoes `keyword_weight` | 400 empty question or bad mode |
 | `GET /api/slide/{slide_id}` | | `{slide (full row), image (signed link), occurrences, notes, items}` | 404 |
 | `GET /api/courses` | | `[{course, course_name, terms}]`, where terms are the terms of indexed copies | |
 | `POST /api/notes` | `{slide_id (max 80), text (2 to 2,000)}` | `{ok, id}` | 404 no such slide, 422 validation |
@@ -1384,7 +1388,7 @@ stateDiagram-v2
 | --- | --- |
 | Look | The same field-notebook design as ben.collier.phd: a dark bench, a cream graph-paper sheet with a margin rule and punched holes, pastel index tabs, taped prints, sticky notes, red pen for stamps and marks, blue pen for margin notes. Fonts: Young Serif, Literata, IBM Plex Mono and Kalam from Google Fonts (allowed in the CSP). One theme by choice. |
 | Header | Brand, one index tab per course (filled from `/api/courses`; the tabs set a hidden `<select>` and rerun the search), Add a deck, and a sticky note with the Picked count. |
-| Landing | A stamp ("A retrieval experiment"), the headline, a lede stating the question the project explores, the search line with a "Find slides" sticky note, the "Show" slider (5 to 100 results, step 5, default 30, remembered in `localStorage` key `sf_n`), the match mode (meaning + keywords, meaning only, keywords only), example questions in four groups (finding slides for a new deck, questions a student would ask, exact terms where keywords do the work, and things I never taught, which should trigger the weak-match warning), a figure of slides as points in meaning space with the question landing next to its answers, four index cards for the four ways a slide can match (narration, image description, slide text and notes, keywords), and four count cards. After a search the landing copy folds away and only the search line stays above the results; the brand link brings it back. |
+| Landing | A stamp ("A retrieval experiment"), the headline, a lede stating the question the project explores, the search line with a "Find slides" sticky note, the "Show" slider (5 to 100 results, step 5, default 30, remembered in `localStorage` key `sf_n`), the match mode (meaning + keywords, meaning only, keywords only), the keyword-weight slider with its explanation (hidden in the single-side modes), example questions in four groups (finding slides for a new deck, questions a student would ask, exact terms where keywords do the work, and things I never taught, which should trigger the weak-match warning), a figure of slides as points in meaning space with the question landing next to its answers, four index cards for the four ways a slide can match (narration, image description, slide text and notes, keywords), and four count cards. After a search the landing copy folds away and only the search line stays above the results; the brand link brings it back. |
 | Status line | Number of slides and best distance in handwriting, or the "not sure I taught this" warning with the distance. |
 | Result card | A print taped to the page: thumbnail, red-pen rank, title, course, term, session and slide number, "used in N sessions", the best matching sentence labeled "I said", "The image shows", "Slide text says" or "My note says", and score details (score, distance, meaning rank, keyword rank, items hit; a tooltip explains each). A slide that also exists in other courses or terms sits on a small pile with a sticky tag ("also in AI for Leaders", "also Fall 2025"); the other copies are listed in the slide dialog. |
 | Slide dialog | Two columns that scroll on their own. Left: the full image, "What is indexed for this slide" (every item with its id and word count; narration chunks also show their term and "part k of n"), notes and a note box. Right: title, where it is and where else it was used, Pick for new deck, Open image, and "Narration" per term (first time window, minutes on screen, matched by video or by text with a lower-confidence label; long text collapses). |

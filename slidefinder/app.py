@@ -2,7 +2,7 @@
 
 Routes (behind the passcode cookie when SF_PASSCODE is set and SF_OPEN is not):
     GET  /api/me                          whether a passcode is needed and whether this browser has it
-    GET  /api/search?q=...&course=...&mode=hybrid|vector|keyword&n=30
+    GET  /api/search?q=...&course=...&mode=hybrid|vector|keyword&n=30&kw=0.5   (kw: keyword weight, 0 to 2)
     GET  /api/slide/{slide_id}            slide, image, narration per term, items, notes, versions in other courses
     GET  /api/courses                     course codes and names for the filter
     POST /api/notes {slide_id, text}      add a note; searchable immediately
@@ -79,13 +79,14 @@ def me(request: Request):
 # ---- search and slides ----------------------------------------------------
 
 @app.get("/api/search", dependencies=[Depends(require_login)])
-def api_search(q: str, course: str | None = None, mode: str = "hybrid", n: int = 30):
+def api_search(q: str, course: str | None = None, mode: str = "hybrid", n: int = 30, kw: float = search.KEYWORD_WEIGHT):
     q = q.strip()[:500]
     if not q:
         raise HTTPException(400, "empty question")
     if mode not in ("hybrid", "vector", "keyword"):
         raise HTTPException(400, "bad mode")
-    return search.search(q, course or None, mode, n)
+    kw = max(0.0, min(2.0, float(kw)))
+    return search.search(q, course or None, mode, n, keyword_weight=kw)
 
 
 @app.get("/api/slide/{slide_id}", dependencies=[Depends(require_login)])

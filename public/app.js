@@ -58,7 +58,7 @@ async function run() {
 function render(d) {
   const n = d.results.length;
   status.innerHTML = d.weak
-    ? `<span class="weak">I don't think I taught this. The closest slides are below, but treat them as weak matches` +
+    ? `<span class="weak">The closest slides are below, but treat them as weak matches` +
       (d.best_distance != null ? ` (best distance ${d.best_distance.toFixed(2)}).` : '.') + `</span>`
     : `${n} slide${n === 1 ? '' : 's'}` + (d.best_distance != null ? ` · best distance ${d.best_distance.toFixed(2)}` : '');
   stacks = d.results; lastResult = d;
@@ -330,6 +330,7 @@ async function init() {
   const h = decodeURIComponent(location.hash.slice(1));
   $('#examples').innerHTML = EXAMPLES.map(g => `<div class="exgroup"><p class="exlabel">${esc(g.label)}</p><div class="exrow">${g.items.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('')}</div></div>`).join('');
   if (h) { q.value = h; grow(); run(); }
+  else q.focus({ preventScroll: true });
 }
 document.addEventListener('click', e => { if (e.target.classList.contains('ex')) { q.value = e.target.textContent; run(); } });
 init();

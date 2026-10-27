@@ -7,6 +7,64 @@ Live: https://slide-finder.vercel.app (the passcode gate is switched off for now
 
 How it all works, with diagrams: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## A tour in screenshots
+
+The page is a sheet from the same field notebook as [ben.collier.phd](https://ben.collier.phd/).
+All screenshots are of my own slides; the narration is my own de-identified speech.
+
+**The landing page.** A cartoon of what the app does, the question box, the example questions in
+four groups, and the four ways a slide can match.
+
+![The top of the landing page: the fig. 1 cartoon, the tagline, the headline and the search box](docs/screenshots/01-landing-top.jpg)
+
+![fig. 1: a question is compared with every text attached to a slide and the slides come back ranked by their closest text](docs/screenshots/03-fig1-how-it-works.png)
+
+![The search box, the match options, the keyword-weight slider with its explanation, and the example questions in four groups](docs/screenshots/04-search-and-questions.png)
+
+![Four index cards: narration, image description, slide text and notes, keywords, each with an ink doodle](docs/screenshots/05-four-ways.png)
+
+<img src="docs/screenshots/06-fig2-meaning-space.png" width="520" alt="fig. 2: every slide as a point in meaning space, colored by course, with the question circled next to its three nearest slides">
+
+**Results.** Each slide is a print taped to the page with its rank in red pen, its course and
+session, the sentence that matched, and its scores. A slide that also exists in another course or
+term sits on a small pile with a sticky tag.
+
+![Results for "how does a computer read a photo": Images are Numbers first, then the attention visualization and the lion slide](docs/screenshots/08-results-top.jpg)
+
+<img src="docs/screenshots/09-result-card-with-versions.png" width="380" alt="One result card on a pile of two more prints, with a sticky tag saying also in AI for Leaders">
+
+**Opening a slide.** The full image, every text indexed for it, my notes, and on the right the
+reason it was chosen: a sentence, the score split, the distance gauge, the evidence ledger and
+the heat text, then the narration per term and the same slide in other courses.
+
+![The slide dialog: the Images are Numbers slide, what is indexed for it, and why it was chosen](docs/screenshots/10-slide-dialog.jpg)
+
+<img src="docs/screenshots/11-why-this-slide.png" width="420" alt="Why this slide was chosen: the sentence, the meaning/keyword score split, the distance gauge from 0.3 to 0.7, the ledger with one bar per item, and the narration with each sentence shaded by closeness"> <img src="docs/screenshots/12-narration-and-versions.png" width="420" alt="Narration per term with the time on screen, and the same slide in AI for Business Leaders with its own narration">
+
+<img src="docs/screenshots/13-what-is-indexed.png" width="640" alt="What is indexed for this slide: the card, the image description and two narration chunks, each with its id and word count">
+
+**When it was never taught, and when keywords decide.** An off-topic question gets a warning and
+weak matches; a short exact term like `mtry` is found by the keyword side even though it is far
+from everything by meaning. The slider changes how much keywords count.
+
+![Not sure I taught this: the warning for "how do I bake sourdough bread" over the closest, weak matches](docs/screenshots/14-weak-match-warning.jpg)
+
+![Results for "mtry": the random forest slide first on keyword rank 1, past the weak line by meaning](docs/screenshots/15-keyword-term-mtry.jpg)
+
+![The options row: show N slides, match by, and the keyword weight slider with the explanation of the score](docs/screenshots/16-keyword-weight-slider.png)
+
+**Course tabs, picks, and adding a deck.**
+
+![Results filtered to Data Mining by the course tab, for customer segmentation](docs/screenshots/17-course-filter.jpg)
+
+<img src="docs/screenshots/18-picked-slides.png" width="420" alt="The picked slides dialog with Export PDF"> <img src="docs/screenshots/19-add-a-deck.png" width="420" alt="The add a deck dialog: choose a PDF, name it, label the course">
+
+**On a phone.**
+
+<img src="docs/screenshots/20-phone-landing.jpg" width="300" alt="The landing page on a phone"> <img src="docs/screenshots/21-phone-results.jpg" width="300" alt="Results on a phone, one print per row">
+
+The full landing page and a full page of results: [02-landing-full.jpg](docs/screenshots/02-landing-full.jpg), [07-results.jpg](docs/screenshots/07-results.jpg). The screenshots are made with a Playwright script against a local run of the app.
+
 ## 1. What it does and why I built it
 
 Slide Finder is a technical project on one question: how do you match a question to a slide?

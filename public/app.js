@@ -49,22 +49,29 @@ function render(d) {
       (d.best_distance != null ? ` (best distance ${d.best_distance.toFixed(2)}).` : '.') + `</span>`
     : `${n} slide${n === 1 ? '' : 's'}` + (d.best_distance != null ? ` · best distance ${d.best_distance.toFixed(2)}` : '');
   stacks = d.results; lastResult = d;
+  document.body.classList.add('searched');
   for (const r of d.results) for (const v of (r.versions || [r])) evidenceById[v.slide.slide_id] = v;
   qstems = new Set((d.question || '').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w.toLowerCase())).map(stem));
   results.innerHTML = d.results.map((r, i) => {
     const vs = r.versions || [r];
     return `<article class="hit${vs.length > 1 ? ' stack' : ''}" data-i="${i}" data-id="${esc(r.slide.slide_id)}">${cardInner(r, i, 0)}</article>`;
   }).join('') || '<p class="empty">Nothing stored yet.</p>';
+  results.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }
 let stacks = [];
 const termLabel = t => { const m = /^(\d{4})\s+(\w+)\s*(.*)$/.exec(t || ''); return m ? `${m[2]} ${m[1]}${m[3] ? ' ' + m[3] : ''}` : (t || ''); };
 function cardInner(stackTop, i, k) {
-  const vs = stackTop.versions || [stackTop], r = vs[k], s = r.slide, w = r.why || {};
-    const tabs = '';
-  return `${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}
+  const vs = stackTop.versions || [stackTop], r = vs[k], s = r.slide;
+  const others = vs.length - 1;
+  const o = others ? vs[1].slide : null;
+  const tag = !o ? '' : others > 1 ? `also in ${others} other terms` : o.course !== s.course ? `also in ${SHORT[o.course] || o.course_name}` : `also ${termLabel(o.term)}`;
+  return `<span class="rank" aria-label="rank ${i + 1}">${i + 1}</span>${others ? '<span class="shadow2"></span>' : ''}
+      <div class="pic">${r.thumb ? `<img src="${esc(r.thumb)}" alt="" loading="lazy">` : ''}</div>
+      ${tag ? `<span class="stack-tag">${esc(tag)}</span>` : ''}
       <div class="body">
-        <div class="title">${i + 1}. ${esc(s.title || '(untitled)')}</div>
-        <div class="where">${esc(where(s))}${vs.length > 1 ? ` · <b>also in ${vs.length - 1} other ${vs.length - 1 === 1 ? 'course or term' : 'courses or terms'}</b>` : (s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : '')}</div>
+        <div class="title">${esc(s.title || '(untitled)')}</div>
+        <div class="where">${esc(where(s))}${others ? ` · <b>also in ${others} other ${others === 1 ? 'course or term' : 'courses or terms'}</b>` : (s.used_in && s.used_in.length > 1 ? ` · <b>used in ${s.used_in.length} sessions</b>` : '')}</div>
+        ${bestLine(r)}
         <div class="scores" title="score: fused rank score (higher is better). distance: cosine distance of the closest item (lower is better). meaning/keyword: best rank of this slide's items on each side.">
           <span>score <b>${r.score.toFixed(4)}</b></span>
           <span>distance <b>${r.distance == null ? '–' : r.distance.toFixed(3)}</b></span>
@@ -72,7 +79,6 @@ function cardInner(stackTop, i, k) {
           <span>keyword <b>${r.fts_rank == null ? '–' : '#' + r.fts_rank}</b></span>
           <span>${r.items} item${r.items === 1 ? '' : 's'} hit</span>
         </div>
-        ${bestLine(r)}
       </div>`;
 }
 const evidenceById = {};
@@ -271,23 +277,37 @@ const EXAMPLES = [
 ];
 
 // ---- misc ------------------------------------------------------------------
+$('.brand').addEventListener('click', e => {
+  e.preventDefault(); history.replaceState(null, '', location.pathname);
+  document.body.classList.remove('searched'); results.innerHTML = ''; status.innerHTML = ''; q.value = ''; q.focus();
+});
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
 document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
 
+const SHORT = { '45-851': 'Data Mining', '45-885': 'Data Viz', '46-887': 'ML for Business', '70-445': 'AI for Leaders', '45-884': 'AI Methods' };
+const TAB_COLORS = ['#f6c453', '#9ccbea', '#a9d8a1', '#f3a391', '#cdb8e8', '#8ed3c7', '#f5b5c8', '#e9dfc4'];
 async function loadCourses() {
   const cs = await api('/api/courses');
   const sel = $('#course'), cur = sel.value;
   sel.innerHTML = '<option value="">All courses</option>' + cs.map(c => `<option value="${esc(c.course)}">${esc(c.course)} ${esc(c.course_name)}</option>`).join('');
   sel.value = cur;
+  const tabs = [{ course: '', course_name: 'all courses' }, ...cs];
+  $('#course-tabs').innerHTML = tabs.map((c, i) => `<li style="--c:${TAB_COLORS[i % TAB_COLORS.length]}"><button type="button" data-course="${esc(c.course)}" aria-pressed="${c.course === cur}" title="${esc(c.course ? c.course + ' ' + c.course_name : 'Search every course')}">${esc(c.course ? (SHORT[c.course] || c.course_name) : c.course_name)}</button></li>`).join('');
 }
+$('#course-tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-course]'); if (!b) return;
+  $('#course').value = b.dataset.course;
+  document.querySelectorAll('#course-tabs button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  if (q.value.trim()) run();
+});
 
 async function init() {
   const me = await api('/api/me');
   if (me.needs_passcode && !me.logged_in) { $('#login').showModal(); return; }
   await Promise.all([loadCourses(), refreshPicks()]);
   const h = decodeURIComponent(location.hash.slice(1));
+  $('#examples').innerHTML = EXAMPLES.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('');
   if (h) { q.value = h; run(); }
-  else results.innerHTML = `<div class="empty"><p>Try one of these:</p>` + EXAMPLES.map(x => `<button class="ghost ex">${esc(x)}</button>`).join('') + `</div>`;
 }
-results.addEventListener('click', e => { if (e.target.classList.contains('ex')) { q.value = e.target.textContent; run(); } });
+document.addEventListener('click', e => { if (e.target.classList.contains('ex')) { q.value = e.target.textContent; run(); } });
 init();

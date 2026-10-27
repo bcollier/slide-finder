@@ -3,44 +3,162 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Slide Finder</title>
+<title>Slide Finder · Ben Collier</title>
+<meta name="description" content="Search every slide Ben Collier has taught since Fall 2023 by meaning, with what he said in class while each slide was on screen.">
+<meta name="theme-color" content="#22302b">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Kalam:wght@400;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Young+Serif&display=swap">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<header class="top">
-  <h1><a href="/">Slide Finder</a></h1>
-  <form id="search" class="search" autocomplete="off">
-    <input id="q" type="search" placeholder="Search through slides" autofocus>
-    <select id="course" title="Course"><option value="">All courses</option></select>
-    <button type="submit">Find slides</button>
-  </form>
-  <div class="tools">
-    <label class="mode">Show <input id="n" type="range" min="5" max="100" step="5" value="30"> <span id="n-val">30</span></label>
-    <label class="mode">Search <select id="mode"><option value="hybrid">meaning + keywords</option><option value="vector">meaning only</option><option value="keyword">keywords only</option></select></label>
-    <button id="picks-btn" class="ghost">Picked <span id="picks-count">0</span></button>
-    <button id="add-deck-btn" class="ghost">Add deck</button>
+<a class="skip" href="#q">Skip to search</a>
+
+<!-- The bench strip: brand, course index tabs, and the two working buttons. -->
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="/" aria-label="Slide Finder, home">
+      <svg class="brand-mark" viewBox="0 0 48 40" aria-hidden="true">
+        <rect x="9" y="11" width="34" height="23" fill="#fffefa" transform="rotate(5 26 22)"/>
+        <rect x="5" y="7" width="34" height="23" fill="#fffefa" transform="rotate(-4 22 18)"/>
+        <rect x="9" y="12" width="26" height="2.6" fill="#b8352a" transform="rotate(-4 22 18)"/>
+        <rect x="9" y="18" width="20" height="1.6" fill="#1d2633" opacity=".55" transform="rotate(-4 22 18)"/>
+        <rect x="9" y="22" width="16" height="1.6" fill="#1d2633" opacity=".55" transform="rotate(-4 22 18)"/>
+        <rect x="14" y="2" width="16" height="6" fill="#e8dcba" opacity=".9" transform="rotate(-8 22 5)"/>
+      </svg>
+      <span>Slide Finder<a class="by" href="https://ben.collier.phd/">by Ben Collier, PhD &rarr;</a></span>
+    </a>
+    <nav aria-label="Courses">
+      <ul class="tabs" id="course-tabs"></ul>
+    </nav>
+    <div class="tools">
+      <button id="add-deck-btn" class="bench-btn" type="button">Add a deck</button>
+      <button id="picks-btn" class="sticky-cta" type="button"><span class="nw">Picked <span id="picks-count">0</span></span><small>for a new deck</small></button>
+    </div>
   </div>
 </header>
 
-<main id="main">
-  <section id="status" class="status"></section>
-  <section id="results" class="grid"></section>
+<main id="main" class="sheet">
+  <div class="sheet-head">
+    <span class="field" aria-hidden="true">Subject <span class="val">my slides, five courses</span></span>
+    <span class="field" aria-hidden="true">Filed under <span class="val">search by meaning</span></span>
+    <span class="field pageno" aria-hidden="true">Entries <span class="val">2,801 slides</span></span>
+  </div>
+
+  <section class="hero" id="hero" aria-labelledby="hero-title">
+    <span class="sec-no" aria-hidden="true">No. 01</span>
+    <div class="hero-text">
+      <p class="stamp hero-copy" style="--rot:-2deg">Every slide since Fall 2023</p>
+      <h1 id="hero-title" class="hero-copy">Find the slide where I already <span class="u">explained it<svg class="ov" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 12 C 60 4, 120 16, 180 9 S 260 6, 297 11" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></span></h1>
+      <p class="lede hero-copy">Ask the way a student would. It searches <mark>2,801 slides</mark> from five courses by what the question <em>means</em>, not the words it uses, and shows what I said in class while each slide was on screen.</p>
+
+      <form id="search" class="search" autocomplete="off" role="search">
+        <label class="sr-only" for="q">Search through slides</label>
+        <div class="search-line">
+          <input id="q" type="search" placeholder="Search through slides" autofocus spellcheck="false">
+          <button type="submit" class="sticky find" style="--rot:-2.5deg"><span class="big">Find slides &rarr;</span></button>
+        </div>
+        <select id="course" hidden aria-hidden="true" tabindex="-1"><option value="">All courses</option></select>
+        <p class="note search-note hero-copy" aria-hidden="true">ask a question,<br>not keywords</p>
+      </form>
+
+      <div class="options">
+        <label class="opt">Show <input id="n" type="range" min="5" max="100" step="5" value="30"> <b id="n-val">30</b> slides</label>
+        <label class="opt">Match by <select id="mode"><option value="hybrid">meaning + keywords</option><option value="vector">meaning only</option><option value="keyword">keywords only</option></select></label>
+      </div>
+
+      <div class="try hero-copy">
+        <p class="kicker">Try one of these</p>
+        <div id="examples" class="examples"></div>
+      </div>
+    </div>
+
+    <div class="hero-art hero-copy">
+      <figure class="figcard" style="--rot:2deg">
+        <span class="tape tc"></span>
+        <svg class="fig" viewBox="0 0 360 230" role="img" aria-label="A scatter of slides in meaning space, colored by course. A question lands next to the three slides that answer it.">
+          <g class="axes" fill="none" stroke="#1d2633" stroke-width="1" stroke-linecap="round" opacity=".55">
+            <path d="M22 206 L344 206"/><path d="M22 206 L22 14"/>
+            <path d="M338 202 L344 206 L338 210"/><path d="M18 20 L22 14 L26 20"/>
+          </g>
+          <text x="340" y="221" class="axl" text-anchor="end">meaning, dim 1</text>
+          <text x="10" y="18" class="axl" transform="rotate(-90 10 18)" text-anchor="end">dim 2</text>
+          <g class="pts">
+<circle cx="56.1" cy="86.5" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="126.7" cy="71.1" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="52.7" cy="78.9" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="110.2" cy="99.0" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="56.3" cy="57.7" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="117.5" cy="88.2" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="143.8" cy="97.0" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="91.8" cy="75.3" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="176.8" cy="75.0" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="70.0" cy="60.3" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="98.0" cy="82.5" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="84.0" cy="78.9" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="103.7" cy="92.0" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="129.9" cy="83.6" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="38.1" cy="92.1" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="49.8" cy="77.0" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="48.1" cy="80.0" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="70.2" cy="83.7" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="200.0" cy="79.2" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="121.8" cy="57.1" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="85.8" cy="91.4" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/><circle cx="92.1" cy="86.4" r="3" fill="#f6c453" stroke="#1d2633" stroke-width=".7"/>
+<circle cx="257.8" cy="54.5" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="270.4" cy="57.5" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="306.0" cy="62.2" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="273.7" cy="70.0" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="281.0" cy="60.7" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="282.2" cy="68.1" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="289.5" cy="79.6" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="258.9" cy="57.9" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="275.9" cy="77.2" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="299.8" cy="64.2" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="270.1" cy="77.8" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="262.7" cy="73.2" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="260.0" cy="60.8" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="227.3" cy="63.9" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="271.1" cy="93.4" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="281.6" cy="86.3" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="276.2" cy="80.8" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="260.0" cy="81.9" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/><circle cx="303.4" cy="64.9" r="3" fill="#9ccbea" stroke="#1d2633" stroke-width=".7"/>
+<circle cx="124.9" cy="186.7" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="145.3" cy="173.2" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="159.1" cy="144.5" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="193.1" cy="184.2" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="143.9" cy="170.3" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="142.8" cy="147.9" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="137.6" cy="165.1" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="164.3" cy="169.7" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="141.3" cy="178.5" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/><circle cx="123.4" cy="170.8" r="3" fill="#a9d8a1" stroke="#1d2633" stroke-width=".7"/>
+<circle cx="296.3" cy="161.0" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="214.5" cy="152.6" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="271.7" cy="172.2" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="308.6" cy="151.3" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="265.1" cy="173.8" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="260.6" cy="132.7" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="287.7" cy="196.5" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="293.3" cy="152.5" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="253.4" cy="168.0" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="335.1" cy="173.4" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="268.2" cy="186.2" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="262.7" cy="190.4" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="245.7" cy="158.5" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="285.3" cy="184.4" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="283.4" cy="169.1" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/><circle cx="213.7" cy="155.3" r="3" fill="#f3a391" stroke="#1d2633" stroke-width=".7"/>
+<circle cx="177.8" cy="103.2" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="183.3" cy="111.5" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="180.4" cy="107.0" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="162.7" cy="130.4" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="219.0" cy="107.7" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="180.4" cy="94.3" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="193.4" cy="112.6" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="233.6" cy="113.1" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="174.4" cy="78.9" r="3" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/>
+<circle cx="201.7" cy="105.7" r="3.6" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="205.8" cy="111.0" r="3.6" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/><circle cx="198.6" cy="120.9" r="3.6" fill="#cdb8e8" stroke="#1d2633" stroke-width=".7"/>
+          </g>
+          <g class="query" stroke="#b8352a" stroke-linecap="round" fill="none">
+            <path class="ink" d="M201 113 m-13 0 c-1 -9 6 -16 14 -15 c9 1 15 7 14 15 c-1 9 -8 14 -16 13 c-8 -1 -13 -6 -12 -13" stroke-width="1.8" style="--len:90"/>
+            <path d="M206 118 l-5 -5 M206 118 l-4 4" stroke-width="0" />
+            <path d="M203.5 115.5 l5 5 M208.5 115.5 l-5 5" stroke-width="2.4"/>
+          </g>
+          <text x="214" y="136" class="hand" fill="#b8352a">the question</text>
+          <g class="legend" transform="translate(28 24)">
+            <rect x="-6" y="-12" width="108" height="80" rx="2" fill="#fffefa" opacity=".82"/>
+            <text class="axl" x="0" y="0">one dot = one slide</text>
+            <circle cx="5" cy="14" r="3.2" fill="#f6c453" stroke="#1d2633" stroke-width=".6"/><text class="lg" x="13" y="17">Data Mining</text>
+            <circle cx="5" cy="26" r="3.2" fill="#9ccbea" stroke="#1d2633" stroke-width=".6"/><text class="lg" x="13" y="29">Data Visualization</text>
+            <circle cx="5" cy="38" r="3.2" fill="#a9d8a1" stroke="#1d2633" stroke-width=".6"/><text class="lg" x="13" y="41">ML for Business</text>
+            <circle cx="5" cy="50" r="3.2" fill="#f3a391" stroke="#1d2633" stroke-width=".6"/><text class="lg" x="13" y="53">AI for Leaders</text>
+            <circle cx="5" cy="62" r="3.2" fill="#cdb8e8" stroke="#1d2633" stroke-width=".6"/><text class="lg" x="13" y="65">AI Methods</text>
+          </g>
+        </svg>
+        <figcaption class="figcap">fig. 1 &middot; every slide as a point in meaning space. A question lands next to the slides that answer it; those come back first.</figcaption>
+      </figure>
+      <p class="note fig-note" aria-hidden="true">&uarr; the three in the circle<br>are the answer</p>
+    </div>
+  </section>
+
+  <section class="sec stats-sec hero-copy" aria-labelledby="stats-title">
+    <span class="sec-no" aria-hidden="true">No. 02</span>
+    <p class="kicker">What is in the notebook</p>
+    <h2 id="stats-title">Indexed so far</h2>
+    <div class="stats">
+      <div class="stat"><span class="n">2,801</span><span class="l">unique slides, merged from 5,623 deck pages</span></div>
+      <div class="stat"><span class="n">5</span><span class="l">courses, from an MBA elective to AI for Business Leaders</span></div>
+      <div class="stat"><span class="n">14</span><span class="l">course terms, Fall 2023 to Fall 2026</span></div>
+      <div class="stat"><span class="n">1,032</span><span class="l">slides with what I said while they were on screen</span></div>
+    </div>
+    <p class="after"><a class="go" href="https://github.com/bcollier/slide-finder#readme">How it works, with the evaluation numbers</a></p>
+  </section>
+
+  <section class="sec results-sec" id="results-sec" aria-live="polite">
+    <span class="sec-no" aria-hidden="true">No. 02</span>
+    <div id="status" class="status"></div>
+    <div id="results" class="grid"></div>
+  </section>
 </main>
 
-<dialog id="login">
-  <form method="dialog" id="login-form">
+<footer class="foot">
+  <p><span class="sign">built from my own slides</span><br>&copy; 2026 Ben Collier</p>
+  <nav aria-label="Footer">
+    <a href="https://ben.collier.phd/">ben.collier.phd</a>
+    <a href="https://ben.collier.phd/projects/#slide-finder">About this project</a>
+    <a href="https://github.com/bcollier/slide-finder">Source on GitHub</a>
+    <a href="https://github.com/bcollier/slide-finder/blob/main/docs/ARCHITECTURE.md">Architecture</a>
+  </nav>
+</footer>
+
+<dialog id="login" class="paper">
+  <form method="dialog" id="login-form" class="sticky-form">
     <h2>Passcode</h2>
+    <p class="hint">This copy is for my own use. Enter the passcode to search.</p>
     <input id="passcode" type="password" autocomplete="current-password" required>
     <p id="login-err" class="err"></p>
-    <button>Enter</button>
+    <button class="primary">Enter</button>
   </form>
 </dialog>
 
-<dialog id="slide">
+<dialog id="slide" class="paper">
   <div class="slide-view">
-    <button class="close" data-close>×</button>
+    <button class="close" data-close aria-label="Close">&times;</button>
     <div class="slide-left">
-      <img id="slide-img" alt="">
+      <figure class="print-lg"><span class="tape tl"></span><span class="tape tr"></span><img id="slide-img" alt=""></figure>
       <h3>What is indexed for this slide</h3>
       <p class="hint">The exact text that was embedded. Each block is one searchable item.</p>
       <div id="items"></div>
@@ -48,15 +166,15 @@
       <ul id="notes"></ul>
       <form id="note-form" class="note-form">
         <textarea id="note-text" rows="2" placeholder="Add a note: “used this in the Deloitte workshop”, “good opener for AWS”" maxlength="2000"></textarea>
-        <button>Add note</button>
+        <button class="primary">Add note</button>
       </form>
     </div>
     <div class="slide-meta">
       <h2 id="slide-title"></h2>
       <p id="slide-where" class="where"></p>
       <div class="actions">
-        <button id="pick-btn">Pick for new deck</button>
-        <a id="open-img" target="_blank" rel="noopener" class="ghost btn">Open image</a>
+        <button id="pick-btn" class="primary">Pick for new deck</button>
+        <a id="open-img" target="_blank" rel="noopener" class="go">Open the full image</a>
       </div>
       <div id="why"></div>
       <h3>Narration <span class="hint">(what I said while the slide was on screen)</span></h3>
@@ -66,28 +184,30 @@
   </div>
 </dialog>
 
-<dialog id="picks">
+<dialog id="picks" class="paper">
   <div class="picks-view">
-    <button class="close" data-close>×</button>
+    <button class="close" data-close aria-label="Close">&times;</button>
+    <p class="kicker">New deck</p>
     <h2>Picked slides</h2>
     <p class="hint">In order. Export writes them into one PDF to start a new deck from.</p>
     <ol id="picks-list"></ol>
     <div class="actions">
-      <a href="/api/export.pdf" class="btn" id="export">Export PDF</a>
+      <a href="/api/export.pdf" class="sticky find" id="export" style="--rot:-2deg"><span class="big">Export PDF &rarr;</span></a>
     </div>
   </div>
 </dialog>
 
-<dialog id="add-deck">
+<dialog id="add-deck" class="paper">
   <form id="deck-form" class="deck-form">
-    <button class="close" type="button" data-close>×</button>
+    <button class="close" type="button" data-close aria-label="Close">&times;</button>
+    <p class="kicker">Add to the index</p>
     <h2>Add a deck</h2>
     <p class="hint">Pick a PDF. Your browser renders each page and pulls its text; nothing is stored until the deck is indexed. It is searchable as soon as this finishes.</p>
     <input id="deck-file" type="file" accept="application/pdf" required>
     <input id="deck-name" type="text" placeholder="Deck name (defaults to the file name)" maxlength="120">
     <input id="deck-course" type="text" placeholder="Course label, e.g. 45-851 or “consulting”" maxlength="20" value="mine">
     <p id="deck-status" class="hint"></p>
-    <button id="deck-go">Index it</button>
+    <button id="deck-go" class="primary">Index it</button>
   </form>
 </dialog>
 

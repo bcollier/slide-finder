@@ -23,6 +23,11 @@ $('#login-form').addEventListener('submit', async e => {
 
 // ---- search ----------------------------------------------------------------
 $('#search').addEventListener('submit', e => { e.preventDefault(); run(); });
+// the question box grows with the text; Enter searches, Shift+Enter adds a line
+const grow = () => { q.style.height = 'auto'; q.style.height = q.scrollHeight + 'px'; };
+q.addEventListener('input', grow);
+q.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); run(); } });
+new ResizeObserver(grow).observe(q);
 $('#mode').addEventListener('change', () => q.value.trim() && run());
 const nEl = $('#n'), nVal = $('#n-val');
 try { const saved = localStorage.getItem('sf_n'); if (saved) { nEl.value = saved; nVal.textContent = saved; } } catch {}
@@ -39,7 +44,7 @@ const syncMode = () => document.body.classList.toggle('mode-single', $('#mode').
 $('#mode').addEventListener('change', syncMode); syncMode();
 
 async function run() {
-  const question = q.value.trim();
+  const question = q.value.trim().replace(/\s+/g, ' ');
   if (!question) return;
   history.replaceState(null, '', '#' + encodeURIComponent(question));
   status.textContent = 'Searching…'; results.innerHTML = '';
@@ -324,7 +329,7 @@ async function init() {
   await Promise.all([loadCourses(), refreshPicks()]);
   const h = decodeURIComponent(location.hash.slice(1));
   $('#examples').innerHTML = EXAMPLES.map(g => `<div class="exgroup"><p class="exlabel">${esc(g.label)}</p><div class="exrow">${g.items.map(x => `<button type="button" class="ex">${esc(x)}</button>`).join('')}</div></div>`).join('');
-  if (h) { q.value = h; run(); }
+  if (h) { q.value = h; grow(); run(); }
 }
 document.addEventListener('click', e => { if (e.target.classList.contains('ex')) { q.value = e.target.textContent; run(); } });
 init();

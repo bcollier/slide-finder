@@ -156,17 +156,16 @@ mark.b { --hlc: var(--hl-blue); } mark.g { --hlc: var(--hl-green); } mark.p { --
 @media (prefers-reduced-motion: reduce) { .tagline .w { animation: none; opacity: 1; transform: none; } .tagline a.w mark { animation: none; background-size: 100% 72%; } .fire { display: none; } }
 
 /* the search line: a ruled line on the paper with a sticky note for the button */
-.search { position: relative; margin: 50px 0 14px; }
-.search-line { display: flex; align-items: flex-end; gap: 14px; }
-.search input[type=search] {
-  flex: 1; min-width: 0; -webkit-appearance: none; appearance: none;
+.search { position: relative; margin: 26px 0 14px; }
+.search-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.search textarea {
+  flex: 1 1 100%; width: 100%; min-width: 0; display: block; resize: none; overflow: hidden;
   background: transparent; border: 0; border-bottom: 2.5px solid var(--pen); border-radius: 0;
-  padding: 8px 2px 8px; font-family: var(--serif); font-size: clamp(20px, 2vw, 27px); line-height: 1.3; color: var(--ink);
+  padding: 8px 2px 8px; font-family: var(--serif); font-size: clamp(20px, 2vw, 27px); line-height: 1.35; color: var(--ink);
   caret-color: var(--pen);
 }
-.search input[type=search]::placeholder { color: rgba(74,84,99,.55); font-style: italic; font-size: clamp(12px, .95vw, 14px); }
-.search input[type=search]:focus { outline: none; border-bottom-color: var(--red); box-shadow: 0 2.5px 0 0 rgba(184,53,42,.25); }
-.search input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; }
+.search textarea::placeholder { color: rgba(74,84,99,.55); font-style: italic; font-size: clamp(15px, 1.3vw, 19px); }
+.search textarea:focus { outline: none; border-bottom-color: var(--red); box-shadow: 0 2.5px 0 0 rgba(184,53,42,.25); }
 .sticky {
   position: relative; display: inline-block; border: 0; background: var(--sticky); color: var(--ink); text-decoration: none;
   padding: 12px 15px 10px; text-align: center;
@@ -175,10 +174,11 @@ mark.b { --hlc: var(--hl-blue); } mark.g { --hlc: var(--hl-green); } mark.p { --
 }
 .sticky .big { font-family: var(--hand); font-weight: 700; font-size: 22px; line-height: 1.05; display: block; white-space: nowrap; }
 .sticky:hover, .sticky:focus-visible { transform: rotate(0) scale(1.04); color: var(--ink); }
-.sticky.find { flex: none; margin-bottom: 2px; }
+.sticky.find { flex: none; margin: 4px 6px 6px 0; }
+.searched .sticky.find { margin-left: auto; }
 .note { font-family: var(--hand); font-weight: 400; color: var(--pen); font-size: 19px; line-height: 1.1; margin: 0; transform: rotate(-4deg); display: inline-block; }
 .note.red { color: var(--red); }
-.search-note { position: absolute; right: -8px; top: -50px; text-align: center; pointer-events: none; }
+.search-note { flex: 1 1 auto; text-align: right; margin-right: 6px; pointer-events: none; transform: rotate(-2deg); }
 .options { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: center; font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); margin: 0 0 8px; }
 .opt { display: inline-flex; align-items: center; gap: 8px; }
 .opt b { color: var(--ink); font-weight: 600; min-width: 2.2em; }
@@ -267,7 +267,7 @@ mark.b { --hlc: var(--hl-blue); } mark.g { --hlc: var(--hl-green); } mark.p { --
 .searched .hero .sec-no { display: none; }
 .searched .hero-text { padding-top: 0; }
 .searched .search { margin-top: 6px; }
-.searched .search input[type=search] { font-size: clamp(18px, 1.6vw, 22px); }
+.searched .search textarea { font-size: clamp(18px, 1.6vw, 22px); }
 .searched .sticky.find { padding: 10px 14px 8px; } .searched .sticky.find .big { font-size: 19px; }
 .results-sec { padding-top: 22px; }
 body:not(.searched) .results-sec { display: none; }
@@ -422,7 +422,6 @@ dialog::backdrop { background: rgba(23, 31, 28, .72); }
 @media (max-width: 960px) {
   .hero { grid-template-columns: 1fr; gap: 28px; }
   .hero-art { max-width: 460px; margin: 10px auto 40px; }
-  .search-note { display: none; }
 }
 @media (max-width: 760px) {
   :root { --gutter: 52px; --pad-r: 16px; }
@@ -447,9 +446,8 @@ dialog::backdrop { background: rgba(23, 31, 28, .72); }
   .sec-no { display: none; }
   .hero h1 { font-size: clamp(34px, 9.5vw, 44px); }
   .lede { font-size: 17px; }
-  .search-line { flex-wrap: wrap; gap: 14px; }
-  .search input[type=search] { flex-basis: 100%; font-size: 19px; }
-  .search input[type=search]::placeholder { font-size: 14px; }
+  .search textarea { font-size: 19px; }
+  .search textarea::placeholder { font-size: 14px; }
   .sticky.find { margin-left: 4px; }
   .figcard { margin: 0 auto; padding: 12px 12px 8px; }
   .fig-note { right: 0; bottom: -46px; font-size: 17px; }

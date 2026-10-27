@@ -136,11 +136,11 @@
       <form id="search" class="search" autocomplete="off" role="search">
         <label class="sr-only" for="q">Ask a question or describe a concept you want to learn more about or use</label>
         <div class="search-line">
-          <input id="q" type="search" placeholder="Ask a question or describe a concept you want to learn more about or use" autofocus spellcheck="false">
+          <textarea id="q" rows="1" placeholder="Ask a question or describe a concept you want to learn more about or use" autofocus spellcheck="false" enterkeyhint="search"></textarea>
+          <p class="note search-note hero-copy" aria-hidden="true">ask it the way a student would &rarr;</p>
           <button type="submit" class="sticky find" style="--rot:-2.5deg"><span class="big">Find slides &rarr;</span></button>
         </div>
         <select id="course" hidden aria-hidden="true" tabindex="-1"><option value="">All courses</option></select>
-        <p class="note search-note hero-copy" aria-hidden="true">ask it the way<br>a student would</p>
       </form>
 
       <div class="options">
